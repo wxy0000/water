@@ -12,7 +12,7 @@ export const SettingRow = ({ label, hint, children }: Props) => (
       alignItems: 'center',
       justifyContent: 'space-between',
       gap: 12,
-      padding: '8px 0',
+      padding: '6px 0',
     }}
   >
     <div style={{ flex: 1, minWidth: 0 }}>

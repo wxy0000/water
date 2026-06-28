@@ -8,6 +8,7 @@ import ReactDOM from 'react-dom/client';
 import PopoverRoot from '@/windows/PopoverRoot';
 import WidgetRoot from '@/windows/WidgetRoot';
 import SettingsRoot from '@/windows/SettingsRoot';
+import '@/styles.css';
 
 function getLabel(): string {
   // 1. URL 参数（最高优先级，Playwright 测试用）

@@ -61,6 +61,53 @@ async function openWidget(page: Page) {
   await page.waitForTimeout(500);
 }
 
+async function expectNoViewportOverflow(page: Page) {
+  const overflow = await page.evaluate(() => ({
+    viewportWidth: window.innerWidth,
+    viewportHeight: window.innerHeight,
+    scrollWidth: document.documentElement.scrollWidth,
+    scrollHeight: document.documentElement.scrollHeight,
+    bodyScrollWidth: document.body.scrollWidth,
+    bodyScrollHeight: document.body.scrollHeight,
+  }));
+
+  expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.viewportWidth);
+  expect(overflow.bodyScrollWidth).toBeLessThanOrEqual(overflow.viewportWidth);
+  expect(overflow.scrollHeight).toBeLessThanOrEqual(overflow.viewportHeight);
+  expect(overflow.bodyScrollHeight).toBeLessThanOrEqual(overflow.viewportHeight);
+}
+
+async function mockEmit(
+  page: Page,
+  event: string,
+  payload: Record<string, unknown> = {},
+): Promise<void> {
+  await mockInvoke(page, 'plugin:event|emit', { event, payload });
+}
+
+async function expectTextInsideViewport(page: Page, text: string) {
+  const rect = await page.evaluate((targetText) => {
+    const elements = Array.from(document.querySelectorAll<HTMLElement>('button, div, span'));
+    const el = elements.find((node) => node.innerText?.trim() === targetText);
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return {
+      left: r.left,
+      top: r.top,
+      right: r.right,
+      bottom: r.bottom,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+    };
+  }, text);
+
+  expect(rect).not.toBeNull();
+  expect(rect!.left).toBeGreaterThanOrEqual(0);
+  expect(rect!.top).toBeGreaterThanOrEqual(0);
+  expect(rect!.right).toBeLessThanOrEqual(rect!.viewportWidth);
+  expect(rect!.bottom).toBeLessThanOrEqual(rect!.viewportHeight);
+}
+
 // ===== 13 个场景 =====
 
 test('01 default settings page', async ({ page }) => {
@@ -216,6 +263,45 @@ test('15 widget uses updated goal settings without remount', async ({ page }) =>
   await mockInvoke(page, 'set_setting', { key: 'daily_goal_ml', value: '2500' });
 
   await expect(page.getByText('0/2500')).toBeVisible({ timeout: 3000 });
+});
+
+test('16 settings fits native window viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 480, height: 700 });
+  await openSettings(page);
+
+  await expectTextInsideViewport(page, '清空全部');
+  await expectNoViewportOverflow(page);
+  await shot(page, '16-settings-fit');
+});
+
+test('17 popover fits native window viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 420 });
+  await openPopover(page);
+
+  await expectNoViewportOverflow(page);
+  await shot(page, '17-popover-fit');
+});
+
+test('18 reminder banner actions work', async ({ page }) => {
+  await openPopover(page);
+  await mockEmit(page, 'notification-pending', { todayTotal: 300, remaining: 1700 });
+
+  await expect(page.getByText('该喝水了 · 今日 300 / 2000 ml')).toBeVisible();
+  await page.getByText('5min').click();
+  await expect(page.getByText('该喝水了 · 今日 300 / 2000 ml')).toBeHidden();
+
+  const snoozeUntil = await mockInvoke<Record<string, string>>(page, 'get_settings').then(
+    (s) => Number.parseInt(s.snooze_until, 10),
+  );
+  expect(snoozeUntil).toBeGreaterThan(Date.now());
+
+  await mockEmit(page, 'notification-pending', { todayTotal: 300, remaining: 1700 });
+  await page.getByText('跳过').click();
+  await expect(page.getByText('该喝水了 · 今日 300 / 2000 ml')).toBeHidden();
+
+  await mockEmit(page, 'notification-pending', { todayTotal: 300, remaining: 1700 });
+  await page.getByText('我喝了').click();
+  await expect(page.getByText('300').first()).toBeVisible();
 });
 
 test('12 vibrancy (visual check)', async ({ page }) => {

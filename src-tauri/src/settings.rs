@@ -12,7 +12,7 @@ use tauri::{AppHandle, LogicalPosition, Manager, Position, Runtime, WebviewUrl, 
 pub struct SettingsState<R: Runtime>(pub WebviewWindow<R>);
 
 const SETTINGS_W: f64 = 480.0;
-const SETTINGS_H: f64 = 560.0;
+const SETTINGS_H: f64 = 700.0;
 
 pub fn init<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
     let win = WebviewWindowBuilder::new(

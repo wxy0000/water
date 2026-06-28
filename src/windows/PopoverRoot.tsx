@@ -112,12 +112,13 @@ export default function PopoverRoot() {
     <VibrancyCard
       style={{
         width: 320,
-        minHeight: 420,
-        padding: 24,
+        height: 420,
+        padding: 20,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 16,
+        justifyContent: pending ? 'flex-start' : 'center',
+        gap: 14,
         fontFamily:
           '-apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif',
       }}
@@ -172,7 +173,7 @@ export default function PopoverRoot() {
         )}
       </AnimatePresence>
 
-      <ProgressRing percent={percent} size={150} strokeWidth={11}>
+      <ProgressRing percent={percent} size={142} strokeWidth={11}>
         <Counter
           value={total}
           format={(n) => `${n}`}

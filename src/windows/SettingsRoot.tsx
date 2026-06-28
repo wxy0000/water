@@ -21,14 +21,14 @@ import { useTodayTotal } from '@/hooks/useTodayTotal';
 import { commands, getCurrentWindow } from '@/lib/tauri';
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <div style={{ marginBottom: 18 }}>
+  <div style={{ marginBottom: 8 }}>
     <div
       style={{
-        fontSize: 11,
+        fontSize: 10,
         color: '#999',
         textTransform: 'uppercase',
         letterSpacing: 0.5,
-        marginBottom: 4,
+        marginBottom: 3,
         fontWeight: 500,
       }}
     >
@@ -37,8 +37,8 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
     <div
       style={{
         background: 'rgba(255, 255, 255, 0.4)',
-        borderRadius: 10,
-        padding: '0 12px',
+        borderRadius: 8,
+        padding: '0 10px',
         border: '1px solid rgba(0, 0, 0, 0.04)',
       }}
     >
@@ -57,7 +57,7 @@ export default function SettingsRoot() {
 
   if (!s) {
     return (
-      <VibrancyCard style={{ width: 480, height: 560, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <VibrancyCard style={{ width: 480, height: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ color: '#999' }}>加载中…</div>
       </VibrancyCard>
     );
@@ -67,8 +67,8 @@ export default function SettingsRoot() {
     <VibrancyCard
       style={{
         width: 480,
-        minHeight: 560,
-        padding: 24,
+        height: 700,
+        padding: 16,
         display: 'flex',
         flexDirection: 'column',
         fontFamily:
@@ -81,7 +81,7 @@ export default function SettingsRoot() {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: 12,
+          marginBottom: 8,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -111,7 +111,7 @@ export default function SettingsRoot() {
       </div>
 
       {/* 07 阶段：Tab 切换 */}
-      <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 10 }}>
         <TabSwitcher
           tabs={[
             { id: 'today', label: '今日' },
@@ -122,7 +122,7 @@ export default function SettingsRoot() {
         />
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto' }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         {activeTab === 'today' ? (
           <>
             {/* 今日统计 */}
@@ -130,12 +130,12 @@ export default function SettingsRoot() {
               style={{
                 background: 'rgba(74, 158, 255, 0.08)',
                 borderRadius: 10,
-                padding: 16,
-                marginBottom: 16,
+                padding: 10,
+                marginBottom: 10,
                 textAlign: 'center',
               }}
             >
-              <div style={{ fontSize: 28, fontWeight: 600, color: '#4A9EFF' }}>
+              <div style={{ fontSize: 24, fontWeight: 600, color: '#4A9EFF' }}>
                 {total} / {s.dailyGoalMl} ml
               </div>
               <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
@@ -159,40 +159,37 @@ export default function SettingsRoot() {
 
             {/* 杯量 */}
             <Section title="杯量">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, padding: '10px 0' }}>
-                <SettingRow label="小杯">
-                  <NumberStepper
-                    value={s.cupSmallMl}
-                    min={50}
-                    max={500}
-                    step={10}
-                    onChange={(v) => update('cupSmallMl', v)}
-                  />
-                </SettingRow>
-                <SettingRow label="中杯">
-                  <NumberStepper
-                    value={s.cupMediumMl}
-                    min={100}
-                    max={800}
-                    step={10}
-                    onChange={(v) => update('cupMediumMl', v)}
-                  />
-                </SettingRow>
-                <SettingRow label="大杯">
-                  <NumberStepper
-                    value={s.cupLargeMl}
-                    min={200}
-                    max={1500}
-                    step={50}
-                    onChange={(v) => update('cupLargeMl', v)}
-                  />
-                </SettingRow>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, padding: '8px 0' }}>
+                <CupAmountControl
+                  label="小杯"
+                  value={s.cupSmallMl}
+                  min={50}
+                  max={500}
+                  step={10}
+                  onChange={(v) => update('cupSmallMl', v)}
+                />
+                <CupAmountControl
+                  label="中杯"
+                  value={s.cupMediumMl}
+                  min={100}
+                  max={800}
+                  step={10}
+                  onChange={(v) => update('cupMediumMl', v)}
+                />
+                <CupAmountControl
+                  label="大杯"
+                  value={s.cupLargeMl}
+                  min={200}
+                  max={1500}
+                  step={50}
+                  onChange={(v) => update('cupLargeMl', v)}
+                />
               </div>
             </Section>
 
-            {/* 工作时间 */}
-            <Section title="工作时间">
-              <div style={{ display: 'flex', gap: 16, padding: '10px 0' }}>
+            {/* 提醒 */}
+            <Section title="提醒">
+              <div style={{ display: 'flex', gap: 16, padding: '8px 0' }}>
                 <SettingRow label="开始">
                   <TimePicker value={s.workStart} onChange={(v) => update('workStart', v)} />
                 </SettingRow>
@@ -200,17 +197,13 @@ export default function SettingsRoot() {
                   <TimePicker value={s.workEnd} onChange={(v) => update('workEnd', v)} />
                 </SettingRow>
               </div>
-            </Section>
-
-            {/* 提醒 */}
-            <Section title="提醒">
               <SettingRow label="启用提醒">
                 <Toggle checked={s.reminderEnabled} onChange={(v) => update('reminderEnabled', v)} />
               </SettingRow>
               <SettingRow label="周末也提醒" hint="周六周日 9:00-18:00">
                 <Toggle checked={s.weekendEnabled} onChange={(v) => update('weekendEnabled', v)} />
               </SettingRow>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '10px 0' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '8px 0' }}>
                 <SettingRow label="最小间隔 (分)">
                   <NumberStepper
                     value={s.reminderMinIntervalMin}
@@ -232,16 +225,12 @@ export default function SettingsRoot() {
               </div>
             </Section>
 
-            {/* 桌面浮窗 */}
-            <Section title="桌面浮窗">
+            {/* 桌面与数据 */}
+            <Section title="桌面与数据">
               <SettingRow label="显示桌面浮窗">
                 <Toggle checked={s.widgetVisible} onChange={(v) => update('widgetVisible', v)} />
               </SettingRow>
-            </Section>
-
-            {/* 数据管理 */}
-            <Section title="数据管理">
-              <div style={{ display: 'flex', gap: 8, padding: '12px 0' }}>
+              <div style={{ display: 'flex', gap: 8, padding: '8px 0 10px' }}>
                 <motion.button
                   whileTap={{ scale: 0.96 }}
                   onClick={() => setConfirmClear('today')}
@@ -351,3 +340,35 @@ const dangerBtn: React.CSSProperties = {
   cursor: 'pointer',
   fontFamily: 'inherit',
 };
+
+const CupAmountControl = ({
+  label,
+  value,
+  min,
+  max,
+  step,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (value: number) => void;
+}) => (
+  <div
+    style={{
+      minWidth: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 8,
+      padding: '6px 4px',
+      borderRadius: 8,
+      background: 'rgba(255, 255, 255, 0.35)',
+    }}
+  >
+    <div style={{ fontSize: 12, color: '#1A1A1A', fontWeight: 500 }}>{label}</div>
+    <NumberStepper value={value} min={min} max={max} step={step} onChange={onChange} />
+  </div>
+);
