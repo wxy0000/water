@@ -1,0 +1,43 @@
+[package]
+name = "l01-water-app"
+version = "0.1.0"
+description = "L01 Water - 喝水提醒 App"
+authors = ["wxy0000"]
+edition = "2021"
+rust-version = "1.77.2"
+
+[lib]
+name = "l01_water_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2.11", features = ["macos-private-api", "tray-icon", "image-png"] }
+tauri-plugin-sql = { version = "2.4", features = ["sqlite"] }
+tauri-plugin-notification = "2.3"
+tauri-plugin-log = "2.8"
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+thiserror = "2"
+anyhow = "1"
+chrono = { version = "0.4", features = ["serde"] }
+rand = "0.10"
+
+# 03 阶段：Rust 端直接 rusqlite（不走 tauri-plugin-sql 的前端 API，错误处理更可控）
+# `bundled` 把 SQLite 静态链接进 binary，不依赖系统 SQLite
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+# macOS vibrancy（仅 macOS 编译）
+[target.'cfg(target_os = "macos")'.dependencies]
+window-vibrancy = "0.7"
+objc = "0.2"
+cocoa = "0.26"
+
+[features]
+# 此 feature 在 `tauri dev` 和 `tauri build` 中默认启用
+# 防止在生产构建中加载额外命令行参数
+custom-protocol = ["tauri/custom-protocol"]

@@ -56,3 +56,16 @@ submission/draft/
 # Backup
 *.bak
 *.backup
+
+# Tauri / Rust
+src-tauri/target/
+src-tauri/Cargo.lock
+src-tauri/gen/
+
+# Vite
+dist-ssr/
+# Vite 8 emit 的 type cache + JS 镜像（项目用 .ts，.js/.d.ts 是 Vite 自动生成）
+vite.config.js
+vite.config.d.ts
+tailwind.config.js
+tailwind.config.d.ts
