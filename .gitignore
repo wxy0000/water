@@ -38,6 +38,7 @@ pnpm-debug.log*
 # Test
 coverage/
 .nyc_output/
+test-results/
 
 # Private (默认不提交)
 docs/private/
