@@ -1,0 +1,58 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.pnp/
+.yarn/cache
+
+# Build outputs
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+
+# Env (NEVER commit)
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Test
+coverage/
+.nyc_output/
+
+# Private (默认不提交)
+docs/private/
+private/
+*.local.md
+*.personal.md
+
+# Submission 临时
+submission/*.tmp
+submission/draft/
+
+# OS
+.DS_Store
+._*
+
+# Backup
+*.bak
+*.backup
