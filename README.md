@@ -24,11 +24,12 @@
 
 ## 技术栈
 
-待定。推荐：**Web/PWA**，理由：
-- 跨平台（手机/电脑都能跑）
-- 无需应用商店审核
-- 易部署、易分享给戴师兄看
-- 适合戴师兄课强调的"AI 协作痕迹"展示
+当前实现：**Tauri 2 + React 18 + Vite + TypeScript + Rust + SQLite**。
+
+- Tauri 负责菜单栏、桌面浮窗、通知、窗口定位等原生能力。
+- React 负责 popover、settings、widget 三个窗口 UI。
+- SQLite 由 Rust 端通过 `rusqlite` 管理，前端只通过 typed commands 访问。
+- Playwright 覆盖主要 Web UI 交互和截图验收。
 
 ## 目录结构
 
@@ -52,12 +53,23 @@ l01-water-app/
 
 - [x] 项目骨架
 - [x] 第一性原理拆解（初版）
-- [ ] MVP 功能定义
-- [ ] 技术栈选型
-- [ ] 实现
+- [x] MVP 功能定义
+- [x] 技术栈选型
+- [x] 实现
 - [ ] 7 天自我验证
 - [ ] 复盘
 
 ## 跑起来
 
-待实现后补充。
+```bash
+npm install
+npm run tauri:dev
+```
+
+常用验证：
+
+```bash
+npm run build
+npm run test:e2e
+cd src-tauri && cargo test && cargo check
+```

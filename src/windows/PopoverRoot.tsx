@@ -17,8 +17,8 @@ import { Counter } from '@/components/Counter';
 import { VibrancyCard } from '@/components/VibrancyCard';
 import { useTodayTotal } from '@/hooks/useTodayTotal';
 import { useKeyboardNav } from '@/hooks/useKeyboardNav';
+import { useSettings } from '@/hooks/useSettings';
 import { records } from '@/db/records';
-import { settings as settingsApi, type Settings } from '@/db/settings';
 import { commands, onTodayChanged, listen, getCurrentWindow } from '@/lib/tauri';
 import type { RecordSource } from '@/lib/tauri';
 
@@ -32,13 +32,12 @@ const SNOOZE_KEY = 'snooze_until';
 
 export default function PopoverRoot() {
   const total = useTodayTotal();
-  const [s, setS] = useState<Settings | null>(null);
+  const { settings: s } = useSettings();
   const [last, setLast] = useState<number | null>(null);
   const [pending, setPending] = useState<NotificationPayload | null>(null);
   const win = getCurrentWindow();
 
   useEffect(() => {
-    settingsApi.getAll().then(setS);
     records.getLast().then((r) => setLast(r?.amountMl ?? null));
 
     const u1 = onTodayChanged(() => {

@@ -164,7 +164,7 @@ pub fn get_weekly_totals(db: State<DbState>) -> DbResult<Vec<DailyTotal>> {
     let today = now.date_naive();
 
     // 7 天：今天 + 前 6 天
-    let mut days: Vec<chrono::NaiveDate> = (0..7)
+    let days: Vec<chrono::NaiveDate> = (0..7)
         .rev()
         .map(|i| today - chrono::Duration::days(i))
         .collect();

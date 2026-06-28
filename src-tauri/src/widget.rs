@@ -23,7 +23,7 @@ pub fn init<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
     // 读上次位置（DB 默认行 id=1）
     let (x, y) = load_pos(app).unwrap_or((DEFAULT_X, DEFAULT_Y));
 
-    // 07 阶段：启动时按 settings['widget_visible'] 决定初始 visible
+    // 启动时按 settings['widget_visible'] 决定初始 visible。
     let initially_visible = load_visible(app).unwrap_or(true);
 
     let win = WebviewWindowBuilder::new(app, "widget", WebviewUrl::App("index.html".into()))
@@ -92,16 +92,16 @@ fn load_pos<R: Runtime>(app: &AppHandle<R>) -> Option<(i32, i32)> {
     .ok()
 }
 
-/// 从 DB 读 widget visible 状态
+/// 从 DB 读 widget visible 设置。
 fn load_visible<R: Runtime>(app: &AppHandle<R>) -> Option<bool> {
     let db = app.state::<crate::db::DbState>();
     db.with_lock(|conn| {
-        let v: i64 = conn.query_row(
-            "SELECT visible FROM widget_state WHERE id = 1",
+        let value: String = conn.query_row(
+            "SELECT value FROM settings WHERE key = 'widget_visible'",
             [],
             |row| row.get(0),
         )?;
-        Ok::<_, crate::db::DbError>(v != 0)
+        Ok::<_, crate::db::DbError>(value == "true")
     })
     .ok()
 }

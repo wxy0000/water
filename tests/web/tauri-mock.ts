@@ -106,7 +106,7 @@ export async function injectTauriMock(page: Page, options?: { label?: string }) 
             return {
               id: last.id,
               timestamp: last.timestamp,
-              amount_ml: last.amount_ml,
+              amountMl: last.amount_ml,
               source: last.source,
             };
           }

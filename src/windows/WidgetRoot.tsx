@@ -8,26 +8,22 @@
 //
 // 单击/双击分桶用 e.detail（1=单击，2=双击）+ 200ms 延迟判定
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { emit } from '@tauri-apps/api/event';
 import { records } from '@/db/records';
-import { settings, type Settings } from '@/db/settings';
 import { useTodayTotal } from '@/hooks/useTodayTotal';
+import { useSettings } from '@/hooks/useSettings';
 import { Counter } from '@/components/Counter';
 import { popoverVariants } from '@/motion/variants';
 import { springs } from '@/motion/springs';
 
 export default function WidgetRoot() {
   const total = useTodayTotal();
-  const [s, setS] = useState<Settings | null>(null);
+  const { settings: s } = useSettings();
   const win = getCurrentWindow();
   const clickTimer = useRef<number | null>(null);
-
-  useEffect(() => {
-    settings.getAll().then(setS);
-  }, []);
 
   const goal = s?.dailyGoalMl ?? 2000;
   const cupMedium = s?.cupMediumMl ?? 300;

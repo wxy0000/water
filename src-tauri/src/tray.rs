@@ -2,9 +2,9 @@
 //
 // 02 阶段目标：
 //   - 启动后 macOS 菜单栏出现水滴图标 + 数字 "0%"
-//   - 左键 → toggle_popover()（TODO 04 实现真实 popover 切换）
+//   - 左键 → toggle_popover()
 //   - 右键 → 菜单（设置 disabled / 退出 / 关于）
-//   - 预留接口：show_popover / hide_popover / toggle_popover / set_tray_count
+//   - 预留接口：show_popover / toggle_popover / set_tray_count
 //
 // 03 阶段：set_tray_count 接 today-changed 事件
 // 04 阶段：show/hide/toggle 调 popover::show/hide/toggle
@@ -65,12 +65,10 @@ pub fn init<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
                 if button_state == MouseButtonState::Up {
                     match button {
                         MouseButton::Left => {
-                            println!("[tray] left click → toggle popover (TODO 04)");
                             // Tauri 2: on_tray_icon_event 第一个参数是 &TrayIcon<R>，用 app_handle() 拿 AppHandle
                             toggle_popover(tray.app_handle());
                         }
                         MouseButton::Right => {
-                            println!("[tray] right click → context menu");
                         }
                         _ => {}
                     }
@@ -79,11 +77,9 @@ pub fn init<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
         })
         .on_menu_event(|app, event| match event.id.as_ref() {
             "show_popover" => {
-                println!("[tray] menu: show_popover");
                 show_popover(app);
             }
             "settings" => {
-                println!("[tray] menu: settings");
                 // 06 阶段：emit 让 Rust listen 后调 settings::show
                 let _ = app.emit("open-settings", ());
             }
@@ -102,26 +98,21 @@ pub fn show_popover<R: Runtime>(app: &AppHandle<R>) {
     crate::popover::show(app);
 }
 
-/// 隐藏 popover 窗口
-pub fn hide_popover<R: Runtime>(app: &AppHandle<R>) {
-    crate::popover::hide(app);
-}
-
 /// 切换 popover 显隐
 pub fn toggle_popover<R: Runtime>(app: &AppHandle<R>) {
     crate::popover::toggle(app);
 }
 
-/// 更新菜单栏数字（百分比）
+/// 更新菜单栏数字与 tooltip。
 /// percent: 0..=100 的整数，会被 clamp 到 0..=999
-pub fn set_tray_count<R: Runtime>(app: &AppHandle<R>, percent: u32) {
+pub fn set_tray_count<R: Runtime>(app: &AppHandle<R>, percent: u32, total_ml: i32, goal_ml: i32) {
     let state = app.state::<TrayState<R>>();
     let pct = percent.min(999);
     let text = format!("{pct}%");
     if let Err(e) = state.0.set_title(Some(&text)) {
         eprintln!("[tray] set_title failed: {e}");
     }
-    let tip = format!("L01 Water — 今日 0 / 2000 ml（{pct}%）");
+    let tip = format!("L01 Water — 今日 {total_ml} / {goal_ml} ml（{pct}%）");
     if let Err(e) = state.0.set_tooltip(Some(&tip)) {
         eprintln!("[tray] set_tooltip failed: {e}");
     }

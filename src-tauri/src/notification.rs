@@ -14,6 +14,7 @@ use tauri::{AppHandle, Emitter};
 use tauri_plugin_notification::NotificationExt;
 
 #[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct NotificationPayload {
     pub today_total: i32,
     pub remaining: i32,
@@ -39,4 +40,23 @@ pub fn send_water_reminder(app: &AppHandle, today_total: i32, remaining: i32) {
             remaining,
         },
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn notification_payload_serializes_for_typescript_consumers() {
+        let payload = NotificationPayload {
+            today_total: 300,
+            remaining: 1700,
+        };
+
+        let value = serde_json::to_value(payload).expect("payload serializes");
+
+        assert_eq!(value.get("todayTotal"), Some(&serde_json::json!(300)));
+        assert_eq!(value.get("remaining"), Some(&serde_json::json!(1700)));
+        assert!(value.get("today_total").is_none());
+    }
 }

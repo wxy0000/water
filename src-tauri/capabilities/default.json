@@ -20,7 +20,6 @@
     "core:event:allow-emit-to",
     "core:app:allow-version",
     "core:app:allow-name",
-    "sql:default",
     "notification:default",
     "notification:allow-notify",
     "notification:allow-is-permission-granted",

@@ -68,7 +68,7 @@ fn position_center<R: Runtime>(win: &WebviewWindow<R>) {
     let scale = monitor.scale_factor();
     let pos = monitor.position();
     let size = monitor.size();
-    let x = pos.x as f64 + (size.width as f64 / scale - SETTINGS_W) / 2.0;
-    let y = pos.y as f64 + (size.height as f64 / scale - SETTINGS_H) / 2.0;
+    let x = pos.x as f64 / scale + (size.width as f64 / scale - SETTINGS_W) / 2.0;
+    let y = pos.y as f64 / scale + (size.height as f64 / scale - SETTINGS_H) / 2.0;
     let _ = win.set_position(Position::Logical(LogicalPosition::new(x, y)));
 }

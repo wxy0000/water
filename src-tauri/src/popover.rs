@@ -67,12 +67,6 @@ pub fn show<R: Runtime>(app: &AppHandle<R>) {
     let _ = state.0.set_focus();
 }
 
-/// 隐藏 popover
-pub fn hide<R: Runtime>(app: &AppHandle<R>) {
-    let state = app.state::<PopoverState<R>>();
-    let _ = state.0.hide();
-}
-
 /// 切换 popover 显隐
 pub fn toggle<R: Runtime>(app: &AppHandle<R>) {
     let state = app.state::<PopoverState<R>>();
@@ -84,35 +78,44 @@ pub fn toggle<R: Runtime>(app: &AppHandle<R>) {
     }
 }
 
-/// 从 tray icon 位置算 popover 居中位置：popover 中心 X = icon 中心 X，popover 顶 = icon 底 + 4px
+/// 从 tray icon 位置算 popover 居中位置
 ///
-/// Tauri 2 的 `TrayIcon::rect()` 返回物理像素 Rect；我们用 Logical 位置设置（避免 DPI 缩放算错）
+/// 3 个 fallback 链：
+/// 1. tray.rect() 物理坐标 → 紧贴 tray icon 下方
+/// 2. 失败 → 居中到主屏幕
+/// 3. 还失败 → 屏幕 (100, 100)
 fn position_next_to_tray<R: Runtime>(app: &AppHandle<R>, win: &WebviewWindow<R>) {
-    let Some(tray) = app.tray_by_id(TRAY_ID) else {
-        return;
-    };
-    let Ok(Some(rect)) = tray.rect() else {
-        return;
-    };
-
     let scale = win.scale_factor().unwrap_or(1.0);
 
-    // Tauri 2 的 tray::Rect 字段是 enum（Position::Physical/Logical + Size::Physical/Logical）
-    // tray icon 总是物理像素
-    let (tx, ty, tw, th) = match (rect.position, rect.size) {
-        (tauri::Position::Physical(p), tauri::Size::Physical(s)) => {
-            (p.x as f64, p.y as f64, s.width as f64, s.height as f64)
+    // 1. 试 tray icon 位置
+    if let Some(tray) = app.tray_by_id(TRAY_ID) {
+        if let Ok(Some(rect)) = tray.rect() {
+            if let (tauri::Position::Physical(p), tauri::Size::Physical(s)) = (rect.position, rect.size) {
+                let popover_x = (p.x as f64 + s.width as f64 / 2.0) / scale - POPOVER_W / 2.0;
+                let popover_y = (p.y as f64 + s.height as f64) / scale + 4.0;
+                eprintln!(
+                    "[popover::pos] tray icon phys=({},{} {}x{}) -> logical=({},{})",
+                    p.x, p.y, s.width, s.height, popover_x, popover_y
+                );
+                let _ = win.set_position(Position::Logical(LogicalPosition::new(
+                    popover_x, popover_y,
+                )));
+                return;
+            }
         }
-        _ => return, // tray rect 应是 physical，其他情况忽略
-    };
+    }
 
-    // 物理坐标 → logical
-    let tray_center_x_logical = (tx + tw / 2.0) / scale;
-    let tray_bottom_y_logical = (ty + th) / scale + 4.0;
-
-    let popover_x = tray_center_x_logical - POPOVER_W / 2.0;
-    let _ = win.set_position(Position::Logical(LogicalPosition::new(
-        popover_x,
-        tray_bottom_y_logical,
-    )));
+    // 2. Fallback：主屏幕中央
+    if let Ok(Some(monitor)) = win.current_monitor() {
+        let pos = monitor.position();
+        let size = monitor.size();
+        let popover_x = pos.x as f64 / scale + (size.width as f64 / scale - POPOVER_W) / 2.0;
+        let popover_y = pos.y as f64 / scale + (size.height as f64 / scale - POPOVER_H) / 2.0;
+        let _ = win.set_position(Position::Logical(LogicalPosition::new(
+            popover_x, popover_y,
+        )));
+    } else {
+        // 3. 兜底：屏幕 (100, 100)
+        let _ = win.set_position(Position::Logical(LogicalPosition::new(100.0, 100.0)));
+    }
 }

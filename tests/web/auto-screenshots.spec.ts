@@ -55,6 +55,12 @@ async function openPopover(page: Page) {
   await page.waitForTimeout(500);
 }
 
+async function openWidget(page: Page) {
+  await page.goto('/?label=widget');
+  await page.waitForSelector('text=💧', { timeout: 10000 });
+  await page.waitForTimeout(500);
+}
+
 // ===== 13 个场景 =====
 
 test('01 default settings page', async ({ page }) => {
@@ -193,6 +199,23 @@ test('11 keyboard nav (1/2/3 + Esc)', async ({ page }) => {
   await expect(page.getByText('950').first()).toBeVisible();
 
   await shot(page, '11-keyboard-nav');
+});
+
+test('14 popover uses updated cup settings without remount', async ({ page }) => {
+  await openPopover(page);
+  await mockInvoke(page, 'set_setting', { key: 'cup_medium_ml', value: '350' });
+  await page.waitForTimeout(300);
+
+  await page.keyboard.press('2');
+
+  await expect(page.getByText('350').first()).toBeVisible();
+});
+
+test('15 widget uses updated goal settings without remount', async ({ page }) => {
+  await openWidget(page);
+  await mockInvoke(page, 'set_setting', { key: 'daily_goal_ml', value: '2500' });
+
+  await expect(page.getByText('0/2500')).toBeVisible({ timeout: 3000 });
 });
 
 test('12 vibrancy (visual check)', async ({ page }) => {

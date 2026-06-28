@@ -176,3 +176,53 @@ pub fn start_loop(app: AppHandle) {
         }
     });
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::TimeZone;
+
+    fn monday_10am_ms() -> i64 {
+        chrono::Local
+            .with_ymd_and_hms(2026, 6, 29, 10, 0, 0)
+            .single()
+            .expect("valid local test time")
+            .timestamp_millis()
+    }
+
+    fn base_settings() -> Settings {
+        Settings {
+            reminder_enabled: true,
+            weekend_enabled: false,
+            work_start: "09:00".to_string(),
+            work_end: "18:00".to_string(),
+            reminder_min_interval_min: 60,
+            reminder_max_interval_min: 90,
+            daily_goal_ml: 2000,
+            snooze_until: 0,
+        }
+    }
+
+    #[test]
+    fn should_remind_when_enabled_in_work_hours_under_goal_and_active() {
+        let now = monday_10am_ms();
+        let settings = base_settings();
+
+        assert!(should_remind(now, None, 0, &settings, 0, 500));
+    }
+
+    #[test]
+    fn should_not_remind_when_disabled_snoozed_recently_recorded_idle_or_goal_met() {
+        let now = monday_10am_ms();
+
+        let mut disabled = base_settings();
+        disabled.reminder_enabled = false;
+        assert!(!should_remind(now, None, 0, &disabled, 0, 500));
+
+        let settings = base_settings();
+        assert!(!should_remind(now, None, now + 1, &settings, 0, 500));
+        assert!(!should_remind(now, Some(now - 10 * 60 * 1000), 0, &settings, 0, 500));
+        assert!(!should_remind(now, None, 0, &settings, 60, 500));
+        assert!(!should_remind(now, None, 0, &settings, 0, 2000));
+    }
+}

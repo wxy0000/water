@@ -21,8 +21,6 @@ use tauri_plugin_notification::NotificationExt;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_log::Builder::default().build())
-        // 04+ 阶段才用 plugin-sql 的前端 API；03 阶段 Rust 端直接 rusqlite
-        .plugin(tauri_plugin_sql::Builder::default().build())
         .plugin(tauri_plugin_notification::init())
         .setup(|app| {
             // 03 阶段：初始化数据库
@@ -134,5 +132,5 @@ fn refresh_tray_from_db<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
         .and_then(|s| s.parse().ok())
         .unwrap_or(2000);
     let pct = ((total as f64 / goal as f64) * 100.0) as u32;
-    tray::set_tray_count(app, pct.min(100));
+    tray::set_tray_count(app, pct.min(100), total, goal);
 }
