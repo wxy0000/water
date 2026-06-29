@@ -29,7 +29,7 @@ pub fn init<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
     let settings_item = MenuItem::with_id(app, "settings", "设置…", true, None::<&str>)?;
     let about_item = PredefinedMenuItem::about(
         app,
-        Some("L01 Water"),
+        Some("Hydropace"),
         None::<tauri::menu::AboutMetadata>,
     )?;
     let quit_item = PredefinedMenuItem::quit(app, None::<&str>)?;
@@ -52,7 +52,7 @@ pub fn init<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
         .icon(icon)
         // .icon_as_template(true) // macOS template image 自适应暗色；MVP 用彩色图，先不开
         .title("0%")
-        .tooltip("L01 Water — 今日 0 / 2000 ml")
+        .tooltip("Hydropace — 今日 0 / 2000 ml")
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_tray_icon_event(|tray, event| {
@@ -112,7 +112,7 @@ pub fn set_tray_count<R: Runtime>(app: &AppHandle<R>, percent: u32, total_ml: i3
     if let Err(e) = state.0.set_title(Some(&text)) {
         eprintln!("[tray] set_title failed: {e}");
     }
-    let tip = format!("L01 Water — 今日 {total_ml} / {goal_ml} ml（{pct}%）");
+    let tip = format!("Hydropace — 今日 {total_ml} / {goal_ml} ml（{pct}%）");
     if let Err(e) = state.0.set_tooltip(Some(&tip)) {
         eprintln!("[tray] set_tooltip failed: {e}");
     }

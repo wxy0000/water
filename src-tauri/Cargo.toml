@@ -1,17 +1,18 @@
 [package]
-name = "l01-water-app"
+name = "hydropace"
 version = "0.1.0"
-description = "L01 Water - 喝水提醒 App"
-authors = ["wxy0000"]
+description = "Hydropace - 喝水提醒 App"
+authors = ["Hydropace"]
 edition = "2021"
 rust-version = "1.77.2"
 
 [lib]
-name = "l01_water_lib"
+name = "hydropace_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
+cc = "1"
 
 [dependencies]
 tauri = { version = "2.11", features = ["macos-private-api", "tray-icon", "image-png"] }
@@ -33,8 +34,6 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 # macOS vibrancy（仅 macOS 编译）
 [target.'cfg(target_os = "macos")'.dependencies]
 window-vibrancy = "0.7"
-objc = "0.2"
-cocoa = "0.26"
 
 [features]
 # 此 feature 在 `tauri dev` 和 `tauri build` 中默认启用

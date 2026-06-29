@@ -185,7 +185,7 @@ work_start|09:00
 ```
 
 **结论**：
-- ✅ DB 文件创建在 macOS 标准位置 `~/Library/Application Support/com.daishixiong.l01water/water.db`
+- ✅ DB 文件创建在 macOS 标准位置 `~/Library/Application Support/app.hydropace.desktop/water.db`
 - ✅ WAL 模式生效（`.db-wal` / `.db-shm` 文件存在）
 - ✅ 3 张表 + 索引建好
 - ✅ 12 条默认设置全部写入
@@ -198,10 +198,10 @@ work_start|09:00
 1. 看到主窗口（dev panel）：3 个加水按钮 + 撤销 + 日志
 2. 点 "中杯 300" → 日志显示 `add 300ml (click-medium) → id=1` + `event: today-changed`
 3. **macOS 菜单栏右上角**应自动从 "0%" 变成 "15%"（300 / 2000 = 15%）
-4. 鼠标悬停 → tooltip 变成 "L01 Water — 今日 300 / 2000 ml（15%）"
+4. 鼠标悬停 → tooltip 变成 "Hydropace — 今日 300 / 2000 ml（15%）"
 5. 再点 "中杯 300" → 30% / 45% / ... / 100% 直至封顶
 6. 点 "撤销" → 数字回退
-7. 在终端 `sqlite3 ~/Library/Application Support/com.daishixiong.l01water/water.db "SELECT * FROM records"` 看 records 表
+7. 在终端 `sqlite3 ~/Library/Application Support/app.hydropace.desktop/water.db "SELECT * FROM records"` 看 records 表
 
 ## 关键 API 选型（备忘）
 

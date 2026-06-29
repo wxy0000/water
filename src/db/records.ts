@@ -14,8 +14,14 @@ export const records = {
   /** 最近一次记录（用于 undo 展示 / 双击 widget 提示） */
   getLast: (): Promise<Record | null> => commands.getLastRecord(),
 
+  /** 今日全部记录（倒序），供面板历史列表展示 */
+  getTodayList: (): Promise<Record[]> => commands.getTodayRecords(),
+
   /** 撤销最后一次记录。后端会 emit('today-changed') */
   undoLast: (): Promise<void> => commands.undoLast(),
+
+  /** 删除指定 id 的记录（面板历史列表逐条删除）。后端会 emit('today-changed') */
+  deleteById: (id: number): Promise<void> => commands.deleteRecord(id),
 };
 
 export type { Record, RecordSource };

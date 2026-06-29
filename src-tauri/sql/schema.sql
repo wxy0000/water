@@ -1,4 +1,4 @@
--- L01 Water 数据库 schema
+-- Hydropace 数据库 schema
 -- 幂等：IF NOT EXISTS，启动时每次执行不会报错
 
 -- 1. 喝水记录

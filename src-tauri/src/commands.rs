@@ -89,6 +89,42 @@ pub fn undo_last(app: AppHandle, db: State<DbState>) -> DbResult<()> {
     Ok(())
 }
 
+/// 今日全部记录（倒序）。供面板历史列表展示
+#[tauri::command]
+pub fn get_today_records(db: State<DbState>) -> DbResult<Vec<Record>> {
+    let start = start_of_today_ms();
+    db.with_lock(|conn| {
+        let mut stmt = conn.prepare(
+            "SELECT id, timestamp, amount_ml, source FROM records \
+             WHERE timestamp >= ?1 ORDER BY timestamp DESC, id DESC",
+        )?;
+        let rows = stmt.query_map(rusqlite::params![start], |row| {
+            Ok(Record {
+                id: row.get(0)?,
+                timestamp: row.get(1)?,
+                amount_ml: row.get(2)?,
+                source: row.get(3)?,
+            })
+        })?;
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(r?);
+        }
+        Ok(out)
+    })
+}
+
+/// 删除指定 id 的记录（面板历史列表逐条删除）
+#[tauri::command]
+pub fn delete_record(app: AppHandle, db: State<DbState>, id: i64) -> DbResult<()> {
+    db.with_lock(|conn| {
+        conn.execute("DELETE FROM records WHERE id = ?1", rusqlite::params![id])?;
+        Ok(())
+    })?;
+    let _ = app.emit("today-changed", ());
+    Ok(())
+}
+
 // ===== Settings =====
 
 #[tauri::command]

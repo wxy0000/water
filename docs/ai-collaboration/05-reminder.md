@@ -198,7 +198,7 @@ windowDidBecomeKey                          ← widget 拿到焦点
 应用启动后（task `bmpwqoc9u` 在跑）：
 
 ### 验证 1：通知权限申请
-- 第一次启动应用，macOS 系统弹窗："L01 Water" 想给您发送通知？
+- 第一次启动应用，macOS 系统弹窗："Hydropace" 想给您发送通知？
 - 选 "允许" / "Allow" → 后续 05 阶段通知能正常弹
 - 选 "不允许" / "Don't Allow" → 后续通知被系统拦截，但 popover banner 仍能显示
 

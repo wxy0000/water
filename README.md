@@ -1,6 +1,6 @@
-# L01 Water App
+# Hydropace
 
-戴师兄 L1 第 1 课作业：喝水提醒 App。
+桌面级喝水节奏提醒 App。
 
 > 这个项目的核心不是"做一个 App"，是**训练 4 件事**：第一性原理拆解、MVP 思维、AI 协作、行为验证。
 
@@ -34,7 +34,7 @@
 ## 目录结构
 
 ```
-l01-water-app/
+hydropace/
 ├── README.md                # 本文件
 ├── WORKLOG.md               # 本项目日志
 ├── .gitignore
@@ -43,7 +43,7 @@ l01-water-app/
 │   ├── decisions/           # 关键判断
 │   ├── ai-collaboration/    # AI 协作记录（脱敏、可展示）
 │   └── experiment-log.md    # 7 天自我验证
-├── submission/              # 给老师/同学看的最终材料
+├── submission/              # 验收与交付材料
 ├── src/                     # 应用代码
 ├── assets/                  # 设计稿、图标
 └── deploy/                  # 部署说明

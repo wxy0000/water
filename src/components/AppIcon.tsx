@@ -10,7 +10,7 @@ interface Props {
 /** 用 Vite ?raw import 读 SVG 内容（保证 build 时 inline） */
 import dropSvg from '@/assets/drop.svg?raw';
 
-export const AppIcon = ({ size = 24, className, ariaLabel = 'L01 Water' }: Props) => {
+export const AppIcon = ({ size = 24, className, ariaLabel = 'Hydropace' }: Props) => {
   const [svg, setSvg] = useState<string>('');
 
   useEffect(() => {

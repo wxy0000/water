@@ -51,6 +51,7 @@ export default function SettingsRoot() {
   const { settings: s, update } = useSettings();
   const [confirmClear, setConfirmClear] = useState<null | 'today' | 'all'>(null);
   const [activeTab, setActiveTab] = useState<'today' | 'week'>('today');
+  const [reminderFeedback, setReminderFeedback] = useState<string | null>(null);
   const win = getCurrentWindow();
   const total = useTodayTotal();
   const weekly = useWeeklyData();
@@ -87,7 +88,7 @@ export default function SettingsRoot() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <AppIcon size={28} />
           <h1 style={{ fontSize: 17, fontWeight: 600, color: '#1A1A1A', margin: 0 }}>
-            L01 Water 设置
+            Hydropace 设置
           </h1>
         </div>
         <motion.button
@@ -223,6 +224,35 @@ export default function SettingsRoot() {
                   />
                 </SettingRow>
               </div>
+              <div style={{ padding: '8px 0 10px' }}>
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  onClick={async () => {
+                    try {
+                      const res = await commands.testReminder();
+                      setReminderFeedback(res.message);
+                    } catch (e) {
+                      console.error('[settings] test reminder failed:', e);
+                      setReminderFeedback('测试失败：' + String(e));
+                    }
+                  }}
+                  style={testBtn}
+                >
+                  测试提醒
+                </motion.button>
+                {reminderFeedback && (
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: reminderFeedback.startsWith('已发送') ? '#34A853' : '#FF9500',
+                      marginTop: 6,
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {reminderFeedback}
+                  </div>
+                )}
+              </div>
             </Section>
 
             {/* 桌面与数据 */}
@@ -335,6 +365,19 @@ const dangerBtn: React.CSSProperties = {
   background: 'rgba(255, 59, 48, 0.08)',
   color: '#FF3B30',
   border: '1px solid rgba(255, 59, 48, 0.2)',
+  fontSize: 13,
+  fontWeight: 500,
+  cursor: 'pointer',
+  fontFamily: 'inherit',
+};
+
+const testBtn: React.CSSProperties = {
+  width: '100%',
+  padding: '8px 12px',
+  borderRadius: 8,
+  background: 'rgba(74, 158, 255, 0.08)',
+  color: '#4A9EFF',
+  border: '1px solid rgba(74, 158, 255, 0.2)',
   fontSize: 13,
   fontWeight: 500,
   cursor: 'pointer',

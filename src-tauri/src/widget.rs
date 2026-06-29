@@ -27,7 +27,7 @@ pub fn init<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
     let initially_visible = load_visible(app).unwrap_or(true);
 
     let win = WebviewWindowBuilder::new(app, "widget", WebviewUrl::App("index.html".into()))
-        .title("L01 Water Widget")
+        .title("Hydropace Widget")
         .inner_size(WIDGET_W, WIDGET_H)
         .position(x as f64, y as f64)
         .decorations(false)

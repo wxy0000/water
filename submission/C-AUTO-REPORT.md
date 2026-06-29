@@ -12,8 +12,8 @@ PATH="$HOME/.cargo/bin:$PATH" npm run tauri:build
 ```
 
 - ✅ cargo release build 成功
-- ✅ `L01 Water.app` (13MB) + `.dmg` 生成
-- ✅ Copy 到 `/Applications/L01 Water.app`
+- ✅ `Hydropace.app` + `.dmg` 生成
+- ✅ Copy 到 `/Applications/Hydropace.app`
 - ✅ `open` 启动（PID 19020 持续在跑）
 
 **踩的 1 个坑 + 修法**：
@@ -119,7 +119,7 @@ out.push({ date: ..., totalMl: total }); // camelCase：与 Rust serde 一致
 ## 怎么重跑（你 / 未来验证）
 
 ```bash
-cd ~/Developer/projects/dai-shixiong/l01-water-app
+cd ~/Developer/projects/hydropace
 
 # 1. 一次性安装
 npm install -D @playwright/test

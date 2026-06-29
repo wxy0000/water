@@ -16,7 +16,7 @@ use serde::Serialize;
 use tauri::{async_runtime, AppHandle, Manager};
 
 use crate::commands;
-use crate::db::DbState;
+use crate::db::{DbResult, DbState};
 use crate::notification;
 use crate::platform;
 
@@ -30,6 +30,14 @@ pub struct Settings {
     pub reminder_max_interval_min: u32,
     pub daily_goal_ml: i32,
     pub snooze_until: i64,
+}
+
+/// test_reminder 返回给前端的结果，让用户能看到"为什么没弹通知"
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TestReminderResult {
+    pub notified: bool,
+    pub message: String,
 }
 
 /// 纯函数：判定是否该发提醒
@@ -60,15 +68,21 @@ pub fn should_remind(
     if today_total_ml >= settings.daily_goal_ml {
         return false;
     }
-    if idle_seconds >= 60 {
+    // 离开较久（≥5min）不打扰；1min 太激进——去倒杯水回来就不提醒了
+    if idle_seconds >= 300 {
         return false;
     }
     true
 }
 
-/// 工作日按 work_start/work_end 判定；周末按 weekend_enabled
+/// 判定 now 是否落在提醒时段内。
+///
+/// - 周末：weekend_enabled 关 → 直接 false；开 → 同样按 work_start/work_end 时段判定
+///   （与设置页 hint "周六周日 9:00-18:00" 一致，不再全天提醒）
+/// - 时段用数值（自午夜起的分钟数）比较，避免字符串字典序在非两位数时出错
+/// - 支持跨日区间：若 end <= start（如 22:00-08:00），命中条件为 now >= start || now <= end
 pub fn is_work_hour_or_weekend(now_ms: i64, settings: &Settings) -> bool {
-    use chrono::TimeZone;
+    use chrono::{TimeZone, Timelike};
 
     let now = chrono::Local
         .timestamp_millis_opt(now_ms)
@@ -78,13 +92,37 @@ pub fn is_work_hour_or_weekend(now_ms: i64, settings: &Settings) -> bool {
     let weekday = now.format("%A").to_string();
     let is_weekend = matches!(weekday.as_str(), "Saturday" | "Sunday");
 
-    if is_weekend {
-        return settings.weekend_enabled;
+    if is_weekend && !settings.weekend_enabled {
+        return false;
     }
 
-    let now_hms = now.format("%H:%M").to_string();
-    now_hms.as_str() >= settings.work_start.as_str()
-        && now_hms.as_str() <= settings.work_end.as_str()
+    let now_min = now.hour() * 60 + now.minute();
+    in_time_window(now_min, &settings.work_start, &settings.work_end)
+}
+
+/// "HH:MM" → 自午夜起的分钟数（合法则 Some，否则 None）
+fn parse_hhmm(s: &str) -> Option<u32> {
+    let (h, m) = s.split_once(':')?;
+    let h: u32 = h.parse().ok()?;
+    let m: u32 = m.parse().ok()?;
+    if h < 24 && m < 60 {
+        Some(h * 60 + m)
+    } else {
+        None
+    }
+}
+
+/// now_min 是否落在 [start, end] 时段内（支持跨日：end <= start 时为跨夜区间）
+fn in_time_window(now_min: u32, start_str: &str, end_str: &str) -> bool {
+    let start = parse_hhmm(start_str).unwrap_or(9 * 60); // 默认 09:00
+    let end = parse_hhmm(end_str).unwrap_or(18 * 60); // 默认 18:00
+    if end <= start {
+        // 跨日：22:00-08:00 → now >= 22:00 或 now <= 08:00
+        now_min >= start || now_min <= end
+    } else {
+        // 同日：09:00-18:00
+        now_min >= start && now_min <= end
+    }
 }
 
 /// 从 DB 读 settings + 解析成结构体
@@ -120,12 +158,34 @@ fn parse_i64(m: &HashMap<String, String>, k: &str, default: i64) -> i64 {
     m.get(k).and_then(|s| s.parse().ok()).unwrap_or(default)
 }
 
+/// 手动触发一次提醒（设置页"测试提醒"按钮调用）
+///
+/// 不受 should_remind 各条件限制。返回结构化结果，前端据此提示
+/// "已发送" / "权限未开" 等状态——避免通知静默失败时用户无从排查。
+#[tauri::command]
+pub fn test_reminder(app: AppHandle) -> DbResult<TestReminderResult> {
+    let settings = load_settings(&app)?;
+    let total = {
+        let db = app.state::<DbState>();
+        commands::get_today_total(db).unwrap_or(0)
+    };
+    let remaining = (settings.daily_goal_ml - total).max(0);
+    let notified = notification::send_water_reminder(&app, total, remaining);
+    let message = if notified {
+        "已发送系统通知".to_string()
+    } else {
+        "通知未弹出：macOS 通知权限未开启，请到 系统设置 → 通知 → Hydropace 开启后重启 App".to_string()
+    };
+    Ok(TestReminderResult { notified, message })
+}
+
 /// 启动后台循环（tauri::async_runtime::spawn，fire-and-forget）
 ///
 /// 用 Tauri 2 的 async_runtime（内部 tokio + 自动 init），不用直接 tokio::spawn
 /// （Tauri 2 默认不启动 tokio runtime，直接调会 panic "no reactor running"）
 pub fn start_loop(app: AppHandle) {
     async_runtime::spawn(async move {
+        eprintln!("[reminder] background loop started, first check in 60s");
         // 启动后等 60s（避免启动就弹通知）
         tokio::time::sleep(Duration::from_secs(60)).await;
 
@@ -154,17 +214,26 @@ pub fn start_loop(app: AppHandle) {
             let idle_seconds = platform::get_idle_seconds();
 
             // 3. 判定
-            if should_remind(
+            let will_remind = should_remind(
                 now_ms,
                 last_record_ms,
                 settings.snooze_until,
                 &settings,
                 idle_seconds,
                 today_total_ml,
-            ) {
+            );
+            eprintln!(
+                "[reminder] check: total={today_total_ml}/{}, last_record={last_record_ms:?}, \
+                 snooze_until={}, idle={idle_seconds}s, in_window={} → will_remind={will_remind}",
+                settings.daily_goal_ml,
+                settings.snooze_until,
+                is_work_hour_or_weekend(now_ms, &settings),
+            );
+            if will_remind {
                 let goal = settings.daily_goal_ml;
                 let remaining = (goal - today_total_ml).max(0);
-                notification::send_water_reminder(&app, today_total_ml, remaining);
+                let ok = notification::send_water_reminder(&app, today_total_ml, remaining);
+                eprintln!("[reminder] sent reminder, notified={ok}");
             }
 
             // 4. 随机 sleep 60-90 分钟
@@ -222,7 +291,55 @@ mod tests {
         let settings = base_settings();
         assert!(!should_remind(now, None, now + 1, &settings, 0, 500));
         assert!(!should_remind(now, Some(now - 10 * 60 * 1000), 0, &settings, 0, 500));
-        assert!(!should_remind(now, None, 0, &settings, 60, 500));
+        // idle 阈值 300s：60s 仍提醒，300s 不提醒
+        assert!(should_remind(now, None, 0, &settings, 60, 500));
+        assert!(!should_remind(now, None, 0, &settings, 300, 500));
         assert!(!should_remind(now, None, 0, &settings, 0, 2000));
+    }
+
+    fn monday_ms(hour: u32, min: u32) -> i64 {
+        chrono::Local
+            .with_ymd_and_hms(2026, 6, 29, hour, min, 0)
+            .single()
+            .expect("valid local test time")
+            .timestamp_millis()
+    }
+
+    #[test]
+    fn time_window_same_day_09_to_18() {
+        let settings = base_settings();
+        // 工作日，时段内命中
+        assert!(is_work_hour_or_weekend(monday_ms(10, 0), &settings));
+        assert!(is_work_hour_or_weekend(monday_ms(9, 0), &settings));
+        assert!(is_work_hour_or_weekend(monday_ms(18, 0), &settings));
+        // 时段外不命中
+        assert!(!is_work_hour_or_weekend(monday_ms(8, 59), &settings));
+        assert!(!is_work_hour_or_weekend(monday_ms(18, 1), &settings));
+    }
+
+    #[test]
+    fn time_window_overnight_22_to_08() {
+        let mut settings = base_settings();
+        settings.work_start = "22:00".to_string();
+        settings.work_end = "08:00".to_string();
+        // 跨夜：晚上和凌晨命中，白天不命中
+        assert!(is_work_hour_or_weekend(monday_ms(23, 0), &settings));
+        assert!(is_work_hour_or_weekend(monday_ms(2, 0), &settings));
+        assert!(is_work_hour_or_weekend(monday_ms(22, 0), &settings));
+        assert!(is_work_hour_or_weekend(monday_ms(8, 0), &settings));
+        // 白天（时段外）不命中
+        assert!(!is_work_hour_or_weekend(monday_ms(10, 0), &settings));
+        assert!(!is_work_hour_or_weekend(monday_ms(21, 59), &settings));
+    }
+
+    #[test]
+    fn parse_hhmm_valid_and_invalid() {
+        assert_eq!(parse_hhmm("09:00"), Some(540));
+        assert_eq!(parse_hhmm("00:00"), Some(0));
+        assert_eq!(parse_hhmm("23:59"), Some(1439));
+        assert_eq!(parse_hhmm("9:0"), Some(540)); // 非两位数也能解析
+        assert_eq!(parse_hhmm("24:00"), None);
+        assert_eq!(parse_hhmm("09:60"), None);
+        assert_eq!(parse_hhmm("garbage"), None);
     }
 }

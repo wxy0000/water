@@ -15,7 +15,7 @@ use tauri::{
 pub struct PopoverState<R: Runtime>(pub WebviewWindow<R>);
 
 const POPOVER_W: f64 = 320.0;
-const POPOVER_H: f64 = 420.0;
+const POPOVER_H: f64 = 540.0;
 const TRAY_ID: &str = "main-tray";
 
 pub fn init<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
@@ -24,7 +24,7 @@ pub fn init<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
         "popover",
         WebviewUrl::App("index.html".into()),
     )
-    .title("L01 Water")
+    .title("Hydropace")
     .inner_size(POPOVER_W, POPOVER_H)
     .decorations(false)
     .transparent(true)

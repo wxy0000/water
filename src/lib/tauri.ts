@@ -47,7 +47,11 @@ export const commands = {
 
   getLastRecord: (): Promise<Record | null> => invoke('get_last_record'),
 
+  getTodayRecords: (): Promise<Record[]> => invoke('get_today_records'),
+
   undoLast: (): Promise<void> => invoke('undo_last'),
+
+  deleteRecord: (id: number): Promise<void> => invoke('delete_record', { id }),
 
   // Settings
   // 用对象类型而非 Record（@tauri-apps/api/event 2.x 内部覆盖了 Record 名）
@@ -72,6 +76,9 @@ export const commands = {
 
   // Trend（07 阶段）
   getWeeklyTotals: (): Promise<DailyTotal[]> => invoke('get_weekly_totals'),
+
+  // Reminder：手动测试提醒（返回 notified + message，让用户看到权限/失败原因）
+  testReminder: (): Promise<{ notified: boolean; message: string }> => invoke('test_reminder'),
 } as const;
 
 // ===== Events =====

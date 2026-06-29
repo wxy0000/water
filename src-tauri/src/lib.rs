@@ -1,4 +1,4 @@
-// L01 Water App — Tauri 2 入口
+// Hydropace — Tauri 2 入口
 //
 // 02 阶段：tray 图标
 // 03 阶段：数据库 + commands + 事件订阅
@@ -14,8 +14,10 @@ mod settings;
 mod tray;
 mod widget;
 
+#[cfg(target_os = "macos")]
+mod native_notify;
+
 use tauri::{Listener, Manager};
-use tauri_plugin_notification::NotificationExt;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -86,12 +88,9 @@ pub fn run() {
             // 05 阶段：申请通知权限 + 启动 reminder 后台循环
             #[cfg(target_os = "macos")]
             {
-                use tauri_plugin_notification::PermissionState;
-                match app.notification().request_permission() {
-                    Ok(PermissionState::Granted) => {}
-                    Ok(other) => eprintln!("[setup] notification permission: {other:?}"),
-                    Err(e) => eprintln!("[setup] permission request err: {e}"),
-                }
+                // 原生 UNUserNotificationCenter：注册 delegate/category（前台弹横幅 + 动作按钮），
+                // 并申请 alert|sound|badge 权限。
+                native_notify::setup(app.handle());
             }
             reminder::start_loop(app.handle().clone());
 
@@ -101,7 +100,9 @@ pub fn run() {
             commands::add_record,
             commands::get_today_total,
             commands::get_last_record,
+            commands::get_today_records,
             commands::undo_last,
+            commands::delete_record,
             commands::get_settings,
             commands::set_setting,
             commands::get_widget_pos,
@@ -110,6 +111,7 @@ pub fn run() {
             commands::clear_today,
             commands::clear_all,
             commands::get_weekly_totals,
+            reminder::test_reminder,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

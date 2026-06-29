@@ -1,35 +1,65 @@
-// 时间选择（HH:MM 两个 number input）
+// 时间选择（HH:MM 两个 text input）
+//
+// 用本地 state 缓存输入文本，blur 时才解析/clamp/commit。
+// 避免 type=number 受控 input + 实时 padStart 把 "13" 重写成 "01" 的跳变 bug。
+
+import { useEffect, useState } from 'react';
+
 interface Props {
   value: string; // "HH:MM"
   onChange: (v: string) => void;
 }
 
+const clamp = (n: number, max: number) => Math.max(0, Math.min(max, n));
+const pad2 = (n: number) => String(n).padStart(2, '0');
+
 export const TimePicker = ({ value, onChange }: Props) => {
   const [h, m] = value.split(':');
-  const safeH = h ?? '09';
-  const safeM = m ?? '00';
-  const update = (newH: string, newM: string) => {
-    const hNum = Math.max(0, Math.min(23, Number.parseInt(newH, 10) || 0));
-    const mNum = Math.max(0, Math.min(59, Number.parseInt(newM, 10) || 0));
-    onChange(`${String(hNum).padStart(2, '0')}:${String(mNum).padStart(2, '0')}`);
+  // 本地缓存：初始用解析后的两位数，编辑过程允许任意文本（空、单数）
+  const [hText, setHText] = useState(pad2(clamp(Number.parseInt(h ?? '0', 10) || 0, 23)));
+  const [mText, setMText] = useState(pad2(clamp(Number.parseInt(m ?? '0', 10) || 0, 59)));
+
+  // 外部 value 变化（如撤销/重置）时同步本地缓存
+  useEffect(() => {
+    setHText(pad2(clamp(Number.parseInt(h ?? '0', 10) || 0, 23)));
+    setMText(pad2(clamp(Number.parseInt(m ?? '0', 10) || 0, 59)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  // blur 时 commit：解析失败按 0，clamp 到合法范围，补零
+  const commit = (which: 'h' | 'm') => {
+    if (which === 'h') {
+      const n = clamp(Number.parseInt(hText, 10) || 0, 23);
+      const text = pad2(n);
+      setHText(text);
+      onChange(`${text}:${mText}`);
+    } else {
+      const n = clamp(Number.parseInt(mText, 10) || 0, 59);
+      const text = pad2(n);
+      setMText(text);
+      onChange(`${hText}:${text}`);
+    }
   };
+
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
       <input
-        type="number"
-        min={0}
-        max={23}
-        value={safeH}
-        onChange={(e) => update(e.target.value, safeM)}
+        type="text"
+        inputMode="numeric"
+        maxLength={2}
+        value={hText}
+        onChange={(e) => setHText(e.target.value.replace(/\D/g, '').slice(0, 2))}
+        onBlur={() => commit('h')}
         style={timeInput}
       />
       <span style={{ color: '#999' }}>:</span>
       <input
-        type="number"
-        min={0}
-        max={59}
-        value={safeM}
-        onChange={(e) => update(safeH, e.target.value)}
+        type="text"
+        inputMode="numeric"
+        maxLength={2}
+        value={mText}
+        onChange={(e) => setMText(e.target.value.replace(/\D/g, '').slice(0, 2))}
+        onBlur={() => commit('m')}
         style={timeInput}
       />
     </div>

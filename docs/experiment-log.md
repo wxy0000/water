@@ -56,5 +56,5 @@
 ## 实验结束后的输出
 
 1. 在本文件末尾追加复盘总结
-2. 写一份精简复盘到 `~/Documents/afterdust/docs/70-reviews/projects/2026-xx-l01-water-app-review.md`
+2. 写一份精简复盘到 `~/Documents/afterdust/docs/70-reviews/projects/2026-xx-hydropace-review.md`
 3. 在 `decisions/` 下追加"实验后判断"文件

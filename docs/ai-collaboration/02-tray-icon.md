@@ -81,7 +81,7 @@ Cargo.toml **不需要补充**——01 阶段已经开了 `tauri = { features = 
 
 ### 修改 5：set_tray_count 同步更新 tooltip
 
-- **改了什么**：set_tray_count 不只 `set_title(pct%)`，还 `set_tooltip("L01 Water — 今日 0 / 2000 ml（pct%）")`
+- **改了什么**：set_tray_count 不只 `set_title(pct%)`，还 `set_tooltip("Hydropace — 今日 0 / 2000 ml（pct%）")`
 - **为什么改**：mvp-spec.md 里明确"鼠标悬停 tooltip：今日 1200 / 2000 ml"。02 阶段数字是假的（"0 / 2000"），但接口定下来。03 阶段接数据库后，今日总量是真实数据，直接拼到 tooltip 即可。
 - **没改的**：still 硬编码 0（用户明确"数字不接事件"）。
 
@@ -242,7 +242,7 @@ error[E0308]: mismatched types
 - `cargo build` ✅ Finished（3 warning 都是预留接口未用：Manager import / hide_popover / set_tray_count；MVP 接受）
 - `npm run tauri:dev` ✅ 启动成功
   - Vite ready `http://localhost:1420/`
-  - `Running target/debug/l01-water-app` (PID 4211)
+  - `Running target/debug/hydropace` (PID 4211)
   - `Triggered applicationDidFinishLaunching`
   - `Creating new window`
   - macOS 菜单栏应出现：蓝色圆点（程序化生成 32×32 RGBA）+ 文字 "0%"

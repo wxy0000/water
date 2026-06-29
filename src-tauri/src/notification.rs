@@ -1,62 +1,69 @@
 // 系统通知（05 阶段）
 //
-// MVP 妥协：
-// - 系统通知用 tauri-plugin-notification 显示，**没有**真正的 action buttons
-//   （plugin 2.3 不支持 actions，要 UNUserNotificationCenter 私有 API；06+ 阶段再说）
-// - 通知发出后，emit('notification-pending', payload) 给 popover
-// - popover 顶部显示 banner 模拟"我喝了 / 5min / 跳过" 3 个按钮
-// - 用户在 popover 里点按钮 → 处理 + 关 banner
-//
-// 这样验收 05 阶段 5 个 action 行为（我喝了/5min/跳过）能在 popover 内完整跑通。
+// macOS 桌面端走 native_notify.rs 的 UNUserNotificationCenter delegate：
+// - 普通提醒直接弹系统横幅，不再通过 popover banner 模拟
+// - 通知主体点击 → 打开 popover
+// - "我喝了" → 记录 1 杯，不主动打开 popover
+// - "5 分钟后" → 写 snooze_until
+// - "跳过" → 关闭通知，不改状态
 
-use serde::Serialize;
-use tauri::{AppHandle, Emitter};
-use tauri_plugin_notification::NotificationExt;
+use tauri::AppHandle;
+use tauri_plugin_notification::{NotificationExt, PermissionState};
 
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct NotificationPayload {
-    pub today_total: i32,
-    pub remaining: i32,
+/// 发送"该喝水了"系统通知。
+///
+/// 返回 true = 系统通知已提交；false = 权限未授予或 show 报错（不再静默吞掉）。
+/// 调用方可据此给用户反馈（如 test_reminder 把结果回传前端）。
+pub fn send_water_reminder(app: &AppHandle, today_total: i32, remaining: i32) -> bool {
+    let body = format!("今天已经 {} ml，还差 {} ml", today_total, remaining);
+    let title = "该喝水了 💧";
+
+    #[cfg(target_os = "macos")]
+    let notified = {
+        // macOS 优先走 native_notify（delegate 处理前台横幅和动作按钮）
+        let native_ok = crate::native_notify::send(app, title, &body);
+        if native_ok {
+            true
+        } else {
+            send_with_tauri_plugin(app, title, &body)
+        }
+    };
+    #[cfg(not(target_os = "macos"))]
+    let notified = {
+        // 其他平台用 plugin（无前台抑制问题）
+        send_with_tauri_plugin(app, title, &body)
+    };
+    notified
 }
 
-/// 发送"该喝水了"通知 + emit event 给 popover 显示 banner
-pub fn send_water_reminder(app: &AppHandle, today_total: i32, remaining: i32) {
-    let body = format!("今天已经 {} ml，还差 {} ml", today_total, remaining);
+fn send_with_tauri_plugin(app: &AppHandle, title: &str, body: &str) -> bool {
+    if matches!(
+        app.notification().permission_state(),
+        Ok(PermissionState::Prompt | PermissionState::PromptWithRationale)
+    ) {
+        if let Err(e) = app.notification().request_permission() {
+            eprintln!("[notification] request permission failed: {e}");
+        }
+    }
 
-    // 系统通知
-    let _ = app
+    let granted = matches!(app.notification().permission_state(), Ok(PermissionState::Granted));
+    if !granted {
+        eprintln!("[notification] permission not granted");
+        return false;
+    }
+
+    match app
         .notification()
         .builder()
-        .title("该喝水了 💧")
-        .body(&body)
-        .show();
-
-    // emit event：让 popover 顶部显示 banner
-    let _ = app.emit(
-        "notification-pending",
-        NotificationPayload {
-            today_total,
-            remaining,
-        },
-    );
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn notification_payload_serializes_for_typescript_consumers() {
-        let payload = NotificationPayload {
-            today_total: 300,
-            remaining: 1700,
-        };
-
-        let value = serde_json::to_value(payload).expect("payload serializes");
-
-        assert_eq!(value.get("todayTotal"), Some(&serde_json::json!(300)));
-        assert_eq!(value.get("remaining"), Some(&serde_json::json!(1700)));
-        assert!(value.get("today_total").is_none());
+        .title(title)
+        .body(body)
+        .sound("default")
+        .show()
+    {
+        Ok(()) => true,
+        Err(e) => {
+            eprintln!("[notification] show failed: {e}");
+            false
+        }
     }
 }

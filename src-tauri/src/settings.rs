@@ -20,7 +20,7 @@ pub fn init<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
         "settings",
         WebviewUrl::App("index.html".into()),
     )
-    .title("L01 Water 设置")
+    .title("Hydropace 设置")
     .inner_size(SETTINGS_W, SETTINGS_H)
     .decorations(false)
     .transparent(true)

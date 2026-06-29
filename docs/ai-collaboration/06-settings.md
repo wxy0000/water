@@ -183,7 +183,7 @@ Vite HMR reload 后无新错误（修 getCurrentWindow import 后）。
 ### 验证 2：设置项实时保存
 - 改 "每日目标" 滑块 2000 → 2500 → DB 立即写（sqlite3 验证）
   ```bash
-  sqlite3 ~/Library/Application\ Support/com.daishixiong.l01water/water.db "SELECT * FROM settings WHERE key='daily_goal_ml'"
+  sqlite3 ~/Library/Application\ Support/app.hydropace.desktop/water.db "SELECT * FROM settings WHERE key='daily_goal_ml'"
   # 应该显示 2500
   ```
 - 改 "中杯" 300 → 350 → DB 立即写
@@ -201,7 +201,7 @@ Vite HMR reload 后无新错误（修 getCurrentWindow import 后）。
 - 点 "清空今日" → 弹窗 → 点 "清空" → DB 今日 records 全删
 - 验证：
   ```bash
-  sqlite3 ~/Library/Application\ Support/com.daishixiong.l01water/water.db "SELECT COUNT(*) FROM records WHERE timestamp >= (strftime('%s', 'now', 'start of day') * 1000)"
+  sqlite3 ~/Library/Application\ Support/app.hydropace.desktop/water.db "SELECT COUNT(*) FROM records WHERE timestamp >= (strftime('%s', 'now', 'start of day') * 1000)"
   # 应该 0
   ```
 - 同样测 "清空全部"

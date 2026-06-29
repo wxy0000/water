@@ -216,7 +216,7 @@ onMouseDown: (e) => {
 
 ```
 === app 进程 ===
-bailuochen  7242  target/debug/l01-water-app
+bailuochen  7242  target/debug/hydropace
 
 === Tauri 启动日志（关键事件） ===
 Triggered `applicationDidFinishLaunching`     ← Tauri 启动
@@ -236,7 +236,7 @@ windowDidBecomeKey                             ← widget 拿到焦点
 
 ### 验证 1：菜单栏图标
 - 看 macOS 菜单栏右上角：蓝色圆点 + "0%"（或 DB 里有记录的话是实际百分比）
-- 鼠标悬停 → tooltip "L01 Water — 今日 X / 2000 ml（Y%）"
+- 鼠标悬停 → tooltip "Hydropace — 今日 X / 2000 ml（Y%）"
 
 ### 验证 2：桌面浮窗 widget
 - 看桌面左上角附近：90×56 半透明浮窗 "💧 0% 0/2000"
@@ -245,7 +245,7 @@ windowDidBecomeKey                             ← widget 拿到焦点
 - 拖出主屏（比如负坐标）→ 应该回弹到屏幕内
 - 终端跑：
   ```bash
-  sqlite3 ~/Library/Application\ Support/com.daishixiong.l01water/water.db "SELECT * FROM widget_state"
+  sqlite3 ~/Library/Application\ Support/app.hydropace.desktop/water.db "SELECT * FROM widget_state"
   ```
   位置应该更新
 - 重启应用（Ctrl-C + 重新 `npm run tauri:dev`）→ widget 应回到上次保存位置
@@ -260,7 +260,7 @@ windowDidBecomeKey                             ← widget 拿到焦点
 - popover 圆环 spring 增长到 15%
 - DB 验证：
   ```bash
-  sqlite3 ~/Library/Application\ Support/com.daishixiong.l01water/water.db "SELECT * FROM records"
+  sqlite3 ~/Library/Application\ Support/app.hydropace.desktop/water.db "SELECT * FROM records"
   ```
   应该有 1 条 `source='widget-double-click'`
 

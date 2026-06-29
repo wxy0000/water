@@ -51,7 +51,9 @@ export const ProgressRing = ({
           stroke={trackColor}
           strokeWidth={strokeWidth}
         />
-        {/* progress（spring 过渡 strokeDashoffset） */}
+        {/* progress（spring 过渡 strokeDashoffset）
+            注意：strokeDashoffset 必须放 animate（不是 style），framer-motion 12
+            只对 animate/MotionValue 做 spring 过渡；放 style 会瞬间跳变甚至不更新。 */}
         <motion.circle
           cx={size / 2}
           cy={size / 2}
@@ -61,7 +63,8 @@ export const ProgressRing = ({
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={c}
-          style={{ strokeDashoffset: offset }}
+          initial={{ strokeDashoffset: c }}
+          animate={{ strokeDashoffset: offset }}
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
           transition={springs.ring}
         />

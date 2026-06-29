@@ -110,8 +110,28 @@ export async function injectTauriMock(page: Page, options?: { label?: string }) 
               source: last.source,
             };
           }
+          if (cmd === 'get_today_records') {
+            const startOfDay = new Date();
+            startOfDay.setHours(0, 0, 0, 0);
+            return records
+              .filter((r) => r.timestamp >= startOfDay.getTime())
+              .slice()
+              .reverse()
+              .map((r) => ({
+                id: r.id,
+                timestamp: r.timestamp,
+                amountMl: r.amount_ml,
+                source: r.source,
+              }));
+          }
           if (cmd === 'undo_last') {
             records.pop();
+            emit('today-changed', null);
+            return null;
+          }
+          if (cmd === 'delete_record') {
+            const idx = records.findIndex((r) => r.id === args.id);
+            if (idx >= 0) records.splice(idx, 1);
             emit('today-changed', null);
             return null;
           }

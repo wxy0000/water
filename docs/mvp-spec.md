@@ -272,7 +272,7 @@ ORDER BY timestamp DESC LIMIT 1;
 - ✅ 微妙但明显，不能"动得太少"
 - ✅ 参考 Linear / Raycast / Arc 的设计语言
 
-## AI 协作要求（戴师兄课核心）
+## AI 协作要求（项目协作核心）
 
 **记录到 `docs/ai-collaboration/`**：
 

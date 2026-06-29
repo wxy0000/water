@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    l01_water_lib::run();
+    hydropace_lib::run();
 }
