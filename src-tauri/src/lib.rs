@@ -1,15 +1,13 @@
 // Hydropace — Tauri 2 入口
-//
-// 02 阶段：tray 图标
-// 03 阶段：数据库 + commands + 事件订阅
-// 04/05 阶段：popover / widget 窗口 / 智能提醒
 
 mod commands;
 mod db;
 mod notification;
+mod app_menu;
 mod platform;
 mod popover;
 mod reminder;
+mod reminder_overlay;
 mod settings;
 mod tray;
 mod widget;
@@ -22,10 +20,9 @@ use tauri::{Listener, Manager};
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_log::Builder::default().build())
         .plugin(tauri_plugin_notification::init())
         .setup(|app| {
-            // 03 阶段：初始化数据库
+            // 初始化数据库
             let app_data_dir = app.path().app_data_dir().map_err(|e| {
                 tauri::Error::from(std::io::Error::new(
                     std::io::ErrorKind::NotFound,
@@ -35,28 +32,28 @@ pub fn run() {
             let db_state = db::DbState::init(&app_data_dir)?;
             app.manage(db_state);
 
-            // 02 阶段：菜单栏图标
+            // 菜单栏图标
             tray::init(app.handle())?;
 
-            // 04 阶段：popover 窗口（紧贴 tray）+ widget 窗口（桌面浮窗）
+            // Popover 窗口 + 桌面浮窗 + 自控提醒浮层
             popover::init(app.handle())?;
             widget::init(app.handle())?;
+            reminder_overlay::init(app.handle())?;
 
-            // 06 阶段：设置窗口
+            // 设置窗口
             settings::init(app.handle())?;
+            app_menu::init(app)?;
 
-            // 03 阶段：用 DB 真实数据刷一次 tray 数字（之前是硬编码 0%）
+            // 用 DB 真实数据刷一次 tray 数字
             refresh_tray_from_db(app.handle());
 
-            // 03 阶段：订阅 today-changed 事件（add_record / undo_last 触发）
+            // 订阅 today-changed 事件，刷新 tray 数字。
             let handle = app.handle().clone();
             app.listen("today-changed", move |_event| {
                 refresh_tray_from_db(&handle);
             });
 
-            // 07 阶段：settings 改 widget_visible → 立即显隐 widget
-            // Rust 端已经存了 widget_visible 字符串到 settings 表，
-            // 需要从 DB 读再 compare —— 简单做法：每次 setSetting emit 后都查一次当前值
+            // 设置变化会影响 widget 显隐和 tray 进度。
             let handle = app.handle().clone();
             app.listen("settings-changed", move |event| {
                 // payload 是 JSON 字符串，需要 serde_json::from_str 解析
@@ -73,19 +70,26 @@ pub fn run() {
                 }
             });
 
-            // 04 阶段：widget 单击 → 通知 Rust 开 popover
+            // widget 单击 → 打开 popover
             let handle = app.handle().clone();
             app.listen("widget-clicked", move |_event| {
                 popover::show(&handle);
             });
 
-            // 06 阶段：tray / 其它来源触发 → 开设置窗口
+            // reminder overlay 主体点击 → 打开 popover，并收起 overlay
+            let handle = app.handle().clone();
+            app.listen("reminder-overlay-open-popover", move |_event| {
+                reminder_overlay::hide(&handle);
+                popover::show(&handle);
+            });
+
+            // tray / App 菜单触发 → 开设置窗口
             let handle = app.handle().clone();
             app.listen("open-settings", move |_event| {
                 settings::show(&handle);
             });
 
-            // 05 阶段：申请通知权限 + 启动 reminder 后台循环
+            // 申请通知权限 + 启动 reminder 后台循环
             #[cfg(target_os = "macos")]
             {
                 // 原生 UNUserNotificationCenter：注册 delegate/category（前台弹横幅 + 动作按钮），
@@ -105,9 +109,6 @@ pub fn run() {
             commands::delete_record,
             commands::get_settings,
             commands::set_setting,
-            commands::get_widget_pos,
-            commands::save_widget_pos,
-            commands::set_widget_visible,
             commands::clear_today,
             commands::clear_all,
             commands::get_weekly_totals,
@@ -127,7 +128,7 @@ fn refresh_tray_from_db<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
             return;
         }
     };
-    // 07 阶段：从 settings.daily_goal_ml 读（不再 hardcode 2000）
+    // 从 settings.daily_goal_ml 读目标，避免设置改了 tray 仍按 2000 计算。
     let goal: i32 = commands::get_settings(state)
         .ok()
         .and_then(|m| m.get("daily_goal_ml").cloned())

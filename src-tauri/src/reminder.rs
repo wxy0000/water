@@ -1,4 +1,4 @@
-// 智能提醒后台任务（05 阶段）
+// 智能提醒后台任务
 //
 // 启动后 spawn 一个 tokio 任务，循环：
 //   1. 读 settings
@@ -38,6 +38,14 @@ pub struct Settings {
 pub struct TestReminderResult {
     pub notified: bool,
     pub message: String,
+}
+
+fn test_reminder_message(notified: bool) -> &'static str {
+    if notified {
+        "已弹出喝水提醒"
+    } else {
+        "提醒未弹出：请重启 App，或到 系统设置 → 通知 → Hydropace 检查权限"
+    }
 }
 
 /// 纯函数：判定是否该发提醒
@@ -171,11 +179,7 @@ pub fn test_reminder(app: AppHandle) -> DbResult<TestReminderResult> {
     };
     let remaining = (settings.daily_goal_ml - total).max(0);
     let notified = notification::send_water_reminder(&app, total, remaining);
-    let message = if notified {
-        "已发送系统通知".to_string()
-    } else {
-        "通知未弹出：macOS 通知权限未开启，请到 系统设置 → 通知 → Hydropace 开启后重启 App".to_string()
-    };
+    let message = test_reminder_message(notified).to_string();
     Ok(TestReminderResult { notified, message })
 }
 
@@ -185,6 +189,7 @@ pub fn test_reminder(app: AppHandle) -> DbResult<TestReminderResult> {
 /// （Tauri 2 默认不启动 tokio runtime，直接调会 panic "no reactor running"）
 pub fn start_loop(app: AppHandle) {
     async_runtime::spawn(async move {
+        #[cfg(debug_assertions)]
         eprintln!("[reminder] background loop started, first check in 60s");
         // 启动后等 60s（避免启动就弹通知）
         tokio::time::sleep(Duration::from_secs(60)).await;
@@ -222,6 +227,7 @@ pub fn start_loop(app: AppHandle) {
                 idle_seconds,
                 today_total_ml,
             );
+            #[cfg(debug_assertions)]
             eprintln!(
                 "[reminder] check: total={today_total_ml}/{}, last_record={last_record_ms:?}, \
                  snooze_until={}, idle={idle_seconds}s, in_window={} → will_remind={will_remind}",
@@ -232,7 +238,11 @@ pub fn start_loop(app: AppHandle) {
             if will_remind {
                 let goal = settings.daily_goal_ml;
                 let remaining = (goal - today_total_ml).max(0);
+                #[cfg(not(debug_assertions))]
+                let _ = notification::send_water_reminder(&app, today_total_ml, remaining);
+                #[cfg(debug_assertions)]
                 let ok = notification::send_water_reminder(&app, today_total_ml, remaining);
+                #[cfg(debug_assertions)]
                 eprintln!("[reminder] sent reminder, notified={ok}");
             }
 
@@ -341,5 +351,12 @@ mod tests {
         assert_eq!(parse_hhmm("24:00"), None);
         assert_eq!(parse_hhmm("09:60"), None);
         assert_eq!(parse_hhmm("garbage"), None);
+    }
+
+    #[test]
+    fn test_reminder_message_matches_overlay_first_behavior() {
+        assert_eq!(test_reminder_message(true), "已弹出喝水提醒");
+        assert!(test_reminder_message(false).contains("提醒未弹出"));
+        assert!(test_reminder_message(false).contains("Hydropace"));
     }
 }

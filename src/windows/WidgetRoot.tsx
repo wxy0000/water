@@ -1,4 +1,4 @@
-// Widget 窗口根组件（04 阶段）
+// Widget 窗口根组件
 //
 // 内容：💧 + 百分比 + total/goal 数字
 // 交互：
@@ -61,7 +61,7 @@ export default function WidgetRoot() {
       onMouseDown={onMouseDown}
       onContextMenu={(e) => {
         e.preventDefault();
-        // 右键菜单：04 阶段先不实现，预留
+        // 右键交给系统 tray / App 菜单处理。
         void emit('widget-context-menu', {});
       }}
       style={{

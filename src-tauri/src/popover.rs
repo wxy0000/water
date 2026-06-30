@@ -1,4 +1,4 @@
-// Popover 窗口（04 阶段）
+// Popover 窗口
 //
 // 行为：
 // - 默认隐藏（visible=false）

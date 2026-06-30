@@ -2,12 +2,14 @@
 //  - main:  隐藏 anchor（无 UI）
 //  - popover: PopoverRoot
 //  - widget: WidgetRoot
+//  - reminder-overlay: ReminderOverlayRoot
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import PopoverRoot from '@/windows/PopoverRoot';
 import WidgetRoot from '@/windows/WidgetRoot';
 import SettingsRoot from '@/windows/SettingsRoot';
+import ReminderOverlayRoot from '@/windows/ReminderOverlayRoot';
 import '@/styles.css';
 
 function getLabel(): string {
@@ -31,7 +33,9 @@ const Root =
     ? WidgetRoot
     : label === 'settings'
       ? SettingsRoot
-      : PopoverRoot;
+      : label === 'reminder-overlay'
+        ? ReminderOverlayRoot
+        : PopoverRoot;
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

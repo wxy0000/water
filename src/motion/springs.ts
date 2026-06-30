@@ -1,4 +1,4 @@
-// Framer Motion spring 常量（04 阶段）
+// Framer Motion spring 常量
 //
 // 全部使用 spring physics（无 linear / ease-in-out），符合 mvp-spec.md 强制要求。
 // 4 组参数按使用场景调优，对照 Linear / Raycast / Arc 的物理感。

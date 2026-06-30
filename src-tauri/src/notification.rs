@@ -1,4 +1,4 @@
-// 系统通知（05 阶段）
+// 系统通知
 //
 // macOS 桌面端走 native_notify.rs 的 UNUserNotificationCenter delegate：
 // - 普通提醒直接弹系统横幅，不再通过 popover banner 模拟
@@ -10,16 +10,18 @@
 use tauri::AppHandle;
 use tauri_plugin_notification::{NotificationExt, PermissionState};
 
-/// 发送"该喝水了"系统通知。
+/// 发送"该喝水了"提醒。
 ///
-/// 返回 true = 系统通知已提交；false = 权限未授予或 show 报错（不再静默吞掉）。
+/// 返回 true = Hydropace 自控浮层或系统通知至少有一个已提交；
+/// false = 浮层 show 失败且系统通知权限/发送失败。
 /// 调用方可据此给用户反馈（如 test_reminder 把结果回传前端）。
 pub fn send_water_reminder(app: &AppHandle, today_total: i32, remaining: i32) -> bool {
     let body = format!("今天已经 {} ml，还差 {} ml", today_total, remaining);
     let title = "该喝水了 💧";
+    let overlay_ok = crate::reminder_overlay::show(app, today_total, remaining);
 
     #[cfg(target_os = "macos")]
-    let notified = {
+    let system_ok = {
         // macOS 优先走 native_notify（delegate 处理前台横幅和动作按钮）
         let native_ok = crate::native_notify::send(app, title, &body);
         if native_ok {
@@ -29,11 +31,12 @@ pub fn send_water_reminder(app: &AppHandle, today_total: i32, remaining: i32) ->
         }
     };
     #[cfg(not(target_os = "macos"))]
-    let notified = {
+    let system_ok = {
         // 其他平台用 plugin（无前台抑制问题）
         send_with_tauri_plugin(app, title, &body)
     };
-    notified
+
+    overlay_ok || system_ok
 }
 
 fn send_with_tauri_plugin(app: &AppHandle, title: &str, body: &str) -> bool {

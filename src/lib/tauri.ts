@@ -1,4 +1,4 @@
-// 前端 typed invoke wrapper（03 阶段）
+// 前端 typed invoke wrapper
 //
 // 所有 Tauri commands 集中在这里 + 强类型。DAO 层（src/db/*）调这个，不直接 invoke。
 // 字段命名：
@@ -60,21 +60,12 @@ export const commands = {
   setSetting: (key: string, value: string): Promise<void> =>
     invoke('set_setting', { key, value }),
 
-  // Widget
-  getWidgetPos: (): Promise<[number, number]> => invoke('get_widget_pos'),
-
-  saveWidgetPos: (x: number, y: number): Promise<void> =>
-    invoke('save_widget_pos', { x, y }),
-
-  setWidgetVisible: (visible: boolean): Promise<void> =>
-    invoke('set_widget_visible', { visible }),
-
-  // Data Management（06 阶段）
+  // Data Management
   clearToday: (): Promise<void> => invoke('clear_today'),
 
   clearAll: (): Promise<void> => invoke('clear_all'),
 
-  // Trend（07 阶段）
+  // Trend
   getWeeklyTotals: (): Promise<DailyTotal[]> => invoke('get_weekly_totals'),
 
   // Reminder：手动测试提醒（返回 notified + message，让用户看到权限/失败原因）

@@ -1,4 +1,4 @@
-// Tab 切换（spring 滑动指示器，07 阶段）
+// Tab 切换（spring 滑动指示器）
 import { motion } from 'framer-motion';
 
 interface Tab<T extends string> {

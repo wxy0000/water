@@ -61,6 +61,15 @@ async function openWidget(page: Page) {
   await page.waitForTimeout(500);
 }
 
+async function openReminderOverlay(page: Page) {
+  await page.setViewportSize({ width: 360, height: 168 });
+  await page.goto('/?label=reminder-overlay');
+  await page.getByRole('alertdialog', { name: 'Hydropace 喝水提醒' }).waitFor({
+    timeout: 10000,
+  });
+  await page.waitForTimeout(300);
+}
+
 async function expectNoViewportOverflow(page: Page) {
   const overflow = await page.evaluate(() => ({
     viewportWidth: window.innerWidth,
@@ -179,6 +188,15 @@ test('06 interval bounds', async ({ page }) => {
   await shot(page, '06-interval');
 });
 
+test('06b test reminder shows overlay-first success state', async ({ page }) => {
+  await openSettings(page);
+  await page.getByRole('button', { name: '测试提醒' }).click();
+
+  const feedback = page.getByText('已弹出喝水提醒');
+  await expect(feedback).toBeVisible();
+  await expect(feedback).toHaveCSS('color', 'rgb(52, 168, 83)');
+});
+
 test('07 widget toggle', async ({ page }) => {
   await openSettings(page);
   await page.getByText('显示桌面浮窗').click();
@@ -285,6 +303,32 @@ test('18 reminder event does not render popover banner', async ({ page }) => {
 
   await expect(page.getByText('该喝水了 · 今日 300 / 2000 ml')).toBeHidden();
   await expect(page.getByText(/小杯/).first()).toBeVisible();
+});
+
+test('19 reminder overlay renders visible desktop reminder', async ({ page }) => {
+  await openReminderOverlay(page);
+  await mockEmit(page, 'reminder-overlay-show', { todayTotal: 1000, remaining: 1500 });
+
+  await expect(page.getByText('该喝水了')).toBeVisible();
+  await expect(page.getByText('今日 1000 ml，还差 1500 ml')).toBeVisible();
+  await expect(page.getByLabel('今日目标完成 40%')).toBeVisible();
+  await expect(page.getByRole('button', { name: '我喝了' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '5 分钟后' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '跳过' })).toBeVisible();
+  await expectNoViewportOverflow(page);
+  await shot(page, '19-reminder-overlay');
+});
+
+test('20 reminder overlay actions record drink and snooze', async ({ page }) => {
+  await openReminderOverlay(page);
+  await mockInvoke(page, 'set_setting', { key: 'cup_medium_ml', value: '350' });
+
+  await page.getByRole('button', { name: '我喝了' }).click();
+  await expect.poll(() => mockInvoke<number>(page, 'get_today_total')).toBe(350);
+
+  await page.getByRole('button', { name: '5 分钟后' }).click();
+  const settings = await mockInvoke<Record<string, string>>(page, 'get_settings');
+  expect(Number(settings.snooze_until)).toBeGreaterThan(Date.now());
 });
 
 test('12 vibrancy (visual check)', async ({ page }) => {

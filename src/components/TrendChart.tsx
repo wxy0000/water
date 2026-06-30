@@ -1,4 +1,4 @@
-// 7 天趋势折线图（纯 SVG + spring，07 阶段）
+// 7 天趋势折线图（纯 SVG + spring）
 //
 // 行为：
 // - 7 个数据点，今天在右端
@@ -137,7 +137,7 @@ function shortDate(iso: string) {
   return `${m}/${d}`;
 }
 
-/** 用 cubic bezier 平滑折线（MVP 简单版：每段一个控制点） */
+/** 用 cubic bezier 平滑折线。 */
 function buildSmoothPath(pts: Array<{ x: number; y: number }>): string {
   if (pts.length === 0) return '';
   const first = pts[0]!;

@@ -1,4 +1,4 @@
-// 桌面浮窗 Widget（04 阶段）
+// 桌面浮窗 Widget
 //
 // 行为：
 // - 启动时从 widget_state 读位置 + 边界检查
@@ -106,7 +106,7 @@ fn load_visible<R: Runtime>(app: &AppHandle<R>) -> Option<bool> {
     .ok()
 }
 
-/// 设置 widget 显隐（07 阶段：set_widget_visible 联动）
+/// 设置 widget 显隐。
 pub fn set_visible<R: Runtime>(app: &AppHandle<R>, visible: bool) {
     let state = app.state::<WidgetState<R>>();
     if visible {

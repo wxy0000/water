@@ -1,4 +1,4 @@
-// Popover 窗口根组件（04 + 05 阶段）
+// Popover 窗口根组件
 //
 // 内容：
 // - 圆环进度（spring strokeDashoffset 过渡）
@@ -64,7 +64,7 @@ export default function PopoverRoot() {
     }
   };
 
-  // 07 阶段：键盘导航 1/2/3 + Esc
+  // 键盘导航 1/2/3 + Esc
   // 注意：useMemo 防 bindings 引用变化触发 useEffect 重新订阅
   const bindings = useMemo(
     () => ({

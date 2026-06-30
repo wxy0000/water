@@ -1,4 +1,4 @@
-// 平台特定 API（05 阶段）
+// 平台特定 API
 //
 // 当前唯一功能：get_idle_seconds（macOS 空闲检测）
 // 其他平台 stub 返回 0（不阻塞 reminder）

@@ -1,4 +1,4 @@
-// 7 天数据 hook（07 阶段，bugfix：订阅 today-changed 自动刷新）
+// 7 天数据 hook，订阅 today-changed 自动刷新。
 import { useEffect, useState } from 'react';
 import { commands, listen, type DailyTotal } from '@/lib/tauri';
 

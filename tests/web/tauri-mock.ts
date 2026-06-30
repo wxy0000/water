@@ -1,6 +1,6 @@
 // Tauri 2 API 浏览器 mock（Playwright 测试用）
 //
-// 注入 __TAURI_INTERNALS__ 全局，mock 11 个 commands + 3 个事件
+// 注入 __TAURI_INTERNALS__ 全局，mock 应用用到的 commands 和事件
 // 通过 Playwright addInitScript 在 page 加载前调用
 //
 // 用法（Playwright spec 里）：
@@ -31,7 +31,6 @@ export async function injectTauriMock(page: Page, options?: { label?: string }) 
 
       const records: Array<{ id: number; timestamp: number; amount_ml: number; source: string }> = [];
       let nextRecordId = 1;
-      const widgetState = { id: 1, x: 100, y: 100, visible: 1 };
 
       // ===== 事件系统 =====
       const listeners = new Map<number, Listener>();
@@ -76,6 +75,9 @@ export async function injectTauriMock(page: Page, options?: { label?: string }) 
           if (cmd === 'plugin:event|emit') {
             // emit('event', payload)
             emit(args.event as string, args.payload);
+            return null;
+          }
+          if (cmd.startsWith('plugin:window|')) {
             return null;
           }
 
@@ -157,20 +159,11 @@ export async function injectTauriMock(page: Page, options?: { label?: string }) 
             emit('settings-changed', [args.key, args.value]);
             return null;
           }
-
-          // Widget
-          if (cmd === 'get_widget_pos') return [widgetState.x, widgetState.y];
-          if (cmd === 'save_widget_pos') {
-            widgetState.x = args.x as number;
-            widgetState.y = args.y as number;
-            return null;
-          }
-          if (cmd === 'set_widget_visible') {
-            widgetState.visible = args.visible ? 1 : 0;
-            return null;
+          if (cmd === 'test_reminder') {
+            return { notified: true, message: '已弹出喝水提醒' };
           }
 
-          // 7 天趋势（07 阶段）
+          // 7 天趋势
           if (cmd === 'get_weekly_totals') {
             const out: Array<{ date: string; totalMl: number }> = [];
             const today = new Date();

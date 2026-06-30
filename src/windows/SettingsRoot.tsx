@@ -1,4 +1,4 @@
-// 设置窗口根组件（06 阶段）
+// 设置窗口根组件
 //
 // 内容：13 个设置项 + 数据管理（清空今日 / 清空全部 + 确认弹窗）
 // 实时保存：每个 onChange 立即 invoke('set_setting') + 乐观更新
@@ -51,7 +51,10 @@ export default function SettingsRoot() {
   const { settings: s, update } = useSettings();
   const [confirmClear, setConfirmClear] = useState<null | 'today' | 'all'>(null);
   const [activeTab, setActiveTab] = useState<'today' | 'week'>('today');
-  const [reminderFeedback, setReminderFeedback] = useState<string | null>(null);
+  const [reminderFeedback, setReminderFeedback] = useState<{
+    message: string;
+    ok: boolean;
+  } | null>(null);
   const win = getCurrentWindow();
   const total = useTodayTotal();
   const weekly = useWeeklyData();
@@ -111,7 +114,7 @@ export default function SettingsRoot() {
         </motion.button>
       </div>
 
-      {/* 07 阶段：Tab 切换 */}
+      {/* Tab 切换 */}
       <div style={{ marginBottom: 10 }}>
         <TabSwitcher
           tabs={[
@@ -230,10 +233,10 @@ export default function SettingsRoot() {
                   onClick={async () => {
                     try {
                       const res = await commands.testReminder();
-                      setReminderFeedback(res.message);
+                      setReminderFeedback({ message: res.message, ok: res.notified });
                     } catch (e) {
                       console.error('[settings] test reminder failed:', e);
-                      setReminderFeedback('测试失败：' + String(e));
+                      setReminderFeedback({ message: '测试失败：' + String(e), ok: false });
                     }
                   }}
                   style={testBtn}
@@ -244,12 +247,12 @@ export default function SettingsRoot() {
                   <div
                     style={{
                       fontSize: 11,
-                      color: reminderFeedback.startsWith('已发送') ? '#34A853' : '#FF9500',
+                      color: reminderFeedback.ok ? '#34A853' : '#FF9500',
                       marginTop: 6,
                       lineHeight: 1.4,
                     }}
                   >
-                    {reminderFeedback}
+                    {reminderFeedback.message}
                   </div>
                 )}
               </div>
@@ -280,7 +283,7 @@ export default function SettingsRoot() {
           </>
         ) : (
           <>
-            {/* 07 阶段：7 天折线图 */}
+            {/* 7 天折线图 */}
             <Section title="7 天总量">
               {weekly ? (
                 <div

@@ -1,13 +1,4 @@
 // 菜单栏图标（tray）
-//
-// 02 阶段目标：
-//   - 启动后 macOS 菜单栏出现水滴图标 + 数字 "0%"
-//   - 左键 → toggle_popover()
-//   - 右键 → 菜单（设置 disabled / 退出 / 关于）
-//   - 预留接口：show_popover / toggle_popover / set_tray_count
-//
-// 03 阶段：set_tray_count 接 today-changed 事件
-// 04 阶段：show/hide/toggle 调 popover::show/hide/toggle
 
 use tauri::{
     image::Image,
@@ -25,7 +16,6 @@ pub fn init<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
 
     // 菜单项
     let show_item = MenuItem::with_id(app, "show_popover", "显示面板", true, None::<&str>)?;
-    // 06 阶段：设置项 enabled
     let settings_item = MenuItem::with_id(app, "settings", "设置…", true, None::<&str>)?;
     let about_item = PredefinedMenuItem::about(
         app,
@@ -80,7 +70,6 @@ pub fn init<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
                 show_popover(app);
             }
             "settings" => {
-                // 06 阶段：emit 让 Rust listen 后调 settings::show
                 let _ = app.emit("open-settings", ());
             }
             _ => {}
@@ -91,7 +80,7 @@ pub fn init<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
     Ok(())
 }
 
-// ===== popover 接口（04 阶段：调 popover 模块）=====
+// ===== Popover 接口 =====
 
 /// 显示 popover 窗口
 pub fn show_popover<R: Runtime>(app: &AppHandle<R>) {
@@ -118,13 +107,12 @@ pub fn set_tray_count<R: Runtime>(app: &AppHandle<R>, percent: u32, total_ml: i3
     }
 }
 
-// ===== 占位图标 =====
+// ===== Tray 图标 =====
 
 /// 程序化生成 32×32 蓝色圆形 PNG
 ///
-/// 不依赖外部 PNG 文件，MVP 阶段立即可跑。
-/// 后续接入正式图标（`npx @tauri-apps/cli icon icons/source.png`）后，
-/// 把 `tauri::image::Image::from_bytes(include_bytes!("../../icons/32x32.png"))` 那行启用即可。
+/// 不依赖外部 PNG 文件，启动时直接构造。
+/// 后续接入正式图标后，可替换为 bundle 内位图资源。
 fn build_tray_icon() -> Image<'static> {
     const SIZE: u32 = 32;
     let mut data = vec![0u8; (SIZE * SIZE * 4) as usize];

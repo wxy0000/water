@@ -1,4 +1,4 @@
-// AppIcon 组件（07 阶段）：包装 src/assets/drop.svg，提供 size / className
+// AppIcon 组件：包装 src/assets/drop.svg，提供 size / className
 import { useEffect, useState } from 'react';
 
 interface Props {

@@ -1,4 +1,4 @@
-// 数据库层（03 阶段）
+// 数据库层
 //
 // 设计：
 // - Mutex<Connection> 单例：SQLite 单文件 + 进程内单连接，避免并发写冲突
@@ -45,7 +45,7 @@ impl DbState {
         std::fs::create_dir_all(app_data_dir)?;
         let db_path = app_data_dir.join("water.db");
         let conn = Connection::open(&db_path)?;
-        // WAL 模式：读写并发更友好（虽然 MVP 单进程，但习惯好）
+        // WAL 模式让读写并发更友好。
         conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;")?;
         // 执行 schema（IF NOT EXISTS + INSERT OR IGNORE，全部幂等）
         conn.execute_batch(SCHEMA_SQL)?;

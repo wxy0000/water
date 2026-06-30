@@ -1,4 +1,4 @@
-// Framer Motion variants（04 阶段）
+// Framer Motion variants
 //
 // variants 配合 springs.ts 使用，让 motion.div 直接 initial/animate/exit。
 

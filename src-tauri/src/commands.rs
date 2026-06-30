@@ -1,4 +1,4 @@
-// Tauri commands（03 阶段）
+// Tauri commands
 //
 // 所有命令都返回 Result<T, DbError>，Tauri 自动转成 JS Error：
 // - 前端 invoke() 失败时拿到 Error 对象，message 字段是 #[error(...)] 的格式
@@ -152,12 +152,12 @@ pub fn set_setting(app: AppHandle, db: State<DbState>, key: String, value: Strin
         )?;
         Ok(())
     })?;
-    // 06 阶段：emit 让 tray / widget / popover 实时刷新（如 dailyGoal 变化后 tray 数字重算）
+    // 设置变化后通知 tray / widget / popover 刷新。
     let _ = app.emit("settings-changed", (&key, &value));
     Ok(())
 }
 
-// ===== Data Management（06 阶段）=====
+// ===== Data Management =====
 
 #[tauri::command]
 pub fn clear_today(app: AppHandle, db: State<DbState>) -> DbResult<()> {
@@ -183,7 +183,7 @@ pub fn clear_all(app: AppHandle, db: State<DbState>) -> DbResult<()> {
     Ok(())
 }
 
-// ===== Trend (07 阶段) =====
+// ===== Trend =====
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -229,43 +229,6 @@ pub fn get_weekly_totals(db: State<DbState>) -> DbResult<Vec<DailyTotal>> {
             });
         }
         Ok(out)
-    })
-}
-
-// ===== Widget =====
-
-#[tauri::command]
-pub fn get_widget_pos(db: State<DbState>) -> DbResult<(i32, i32)> {
-    db.with_lock(|conn| {
-        let (x, y): (i32, i32) = conn.query_row(
-            "SELECT x, y FROM widget_state WHERE id = 1",
-            [],
-            |row| Ok((row.get(0)?, row.get(1)?)),
-        )?;
-        Ok((x, y))
-    })
-}
-
-#[tauri::command]
-pub fn save_widget_pos(db: State<DbState>, x: i32, y: i32) -> DbResult<()> {
-    db.with_lock(|conn| {
-        conn.execute(
-            "UPDATE widget_state SET x = ?1, y = ?2 WHERE id = 1",
-            rusqlite::params![x, y],
-        )?;
-        Ok(())
-    })
-}
-
-#[tauri::command]
-pub fn set_widget_visible(db: State<DbState>, visible: bool) -> DbResult<()> {
-    let v: i32 = if visible { 1 } else { 0 };
-    db.with_lock(|conn| {
-        conn.execute(
-            "UPDATE widget_state SET visible = ?1 WHERE id = 1",
-            rusqlite::params![v],
-        )?;
-        Ok(())
     })
 }
 

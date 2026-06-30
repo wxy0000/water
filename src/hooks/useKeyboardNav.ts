@@ -1,4 +1,4 @@
-// 键盘导航 hook（07 阶段）
+// 键盘导航 hook
 //
 // 用法（在 popover 顶层）：
 //   useKeyboardNav({

@@ -35,14 +35,16 @@ static UNUserNotificationCenter *hydropace_current_center(void) {
          withCompletionHandler:(void (^)(UNNotificationPresentationOptions options))completionHandler {
   UNNotificationPresentationOptions options = UNNotificationPresentationOptionSound;
 
+  NSLog(@"[native-notify] will present notification: %@", notification.request.identifier);
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+  options |= UNNotificationPresentationOptionAlert;
+#pragma clang diagnostic pop
+
   if (@available(macOS 11.0, *)) {
     options |= UNNotificationPresentationOptionBanner;
     options |= UNNotificationPresentationOptionList;
-  } else {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    options |= UNNotificationPresentationOptionAlert;
-#pragma clang diagnostic pop
   }
 
   completionHandler(options);
@@ -109,6 +111,12 @@ bool hydropace_native_notify_setup(void) {
 
   UNAuthorizationOptions options =
       UNAuthorizationOptionAlert | UNAuthorizationOptionSound | UNAuthorizationOptionBadge;
+  if (@available(macOS 12.0, *)) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    options |= UNAuthorizationOptionTimeSensitive;
+#pragma clang diagnostic pop
+  }
   [center requestAuthorizationWithOptions:options
                         completionHandler:^(BOOL granted, NSError *_Nullable error) {
                           if (error != nil) {
@@ -138,6 +146,19 @@ bool hydropace_native_notify_send(const char *title, const char *body) {
   content.sound = [UNNotificationSound defaultSound];
   content.categoryIdentifier = HydropaceCategory;
   content.threadIdentifier = @"water-reminder";
+  if (@available(macOS 12.0, *)) {
+    content.interruptionLevel = UNNotificationInterruptionLevelTimeSensitive;
+  }
+
+  [center getNotificationSettingsWithCompletionHandler:^(UNNotificationSettings *settings) {
+    NSLog(@"[native-notify] settings auth=%ld alert=%ld center=%ld lock=%ld sound=%ld style=%ld",
+          (long)settings.authorizationStatus,
+          (long)settings.alertSetting,
+          (long)settings.notificationCenterSetting,
+          (long)settings.lockScreenSetting,
+          (long)settings.soundSetting,
+          (long)settings.alertStyle);
+  }];
 
   NSString *identifier =
       [NSString stringWithFormat:@"water-reminder-%lld",
